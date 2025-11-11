@@ -267,6 +267,128 @@
       <a href="https://github.com/c3codex">GitHub</a> •
       <a href="https://farcaster.xyz/c3codex">Farcaster</a>
     </p>
+    <!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>C.O.I.L — Codex Oracle Interface Library</title>
+  <meta name="theme-color" content="#0b0b0f" />
+
+  <!-- Open Graph basics -->
+  <meta property="og:title" content="C.O.I.L — Codex Oracle Interface Library">
+  <meta property="og:description" content="the living library of the c3 codex: glyphs, scrolls, protocols.">
+  <meta property="og:type" content="website">
+
+  <style>
+    :root{
+      --obsidian:#0b0b0f;
+      --ink:#d9d7cf;
+      --gold:#e9d8a6;
+      --gold-soft:#e9d8a633;
+      --line:#1a1a22;
+      --accent:#6f7fff; /* soft indigo halo ref */
+    }
+    html,body{margin:0;background:var(--obsidian);color:var(--ink);font:16px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial}
+    a{color:var(--gold);text-decoration:none}
+    a:hover{opacity:.9}
+    header{padding:48px 20px 12px;max-width:1080px;margin:auto}
+    .title{font-weight:700;font-size:28px;letter-spacing:.02em}
+    .subtitle{opacity:.8;margin-top:6px}
+    .bar{height:1px;background:linear-gradient(90deg,transparent, var(--gold-soft), transparent);margin:20px 0}
+    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0 28px}
+    .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#0f0f15}
+    .chip strong{color:var(--gold)}
+    input[type="search"]{flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0f0f15;color:var(--ink);outline:none}
+    .grid{max-width:1080px;margin:0 auto 64px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;padding:0 20px}
+    .card{position:relative;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#0f0f15,#0b0b0f);overflow:hidden}
+    .thumb{aspect-ratio:1/1;background:#0d0d12;display:block;overflow:hidden}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block;filter:drop-shadow(0 0 6px #000)}
+    .halo::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:0 0 60px 10px rgba(111,127,255,.08)}
+    .body{padding:14px}
+    .name{font-weight:700}
+    .meta{opacity:.75;font-size:12px;margin-top:4px}
+    .tags{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+    .tag{font-size:11px;border:1px solid var(--line);padding:4px 8px;border-radius:999px;opacity:.9}
+    .links{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .btn{font-size:13px;border:1px solid var(--gold);color:var(--gold);padding:6px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;background:transparent}
+    .btn:hover{background:var(--gold-soft)}
+    footer{max-width:1080px;margin:24px auto 80px;padding:0 20px;opacity:.7}
+    .empty{max-width:720px;margin:60px auto;padding:24px;border:1px dashed var(--line);border-radius:12px;text-align:center}
+    .small{font-size:12px;opacity:.75}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">C.O.I.L — codex oracle interface library</div>
+    <div class="subtitle">the living library of the c3 codex: glyphs · scrolls · protocols</div>
+    <div class="bar"></div>
+
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="search glyphs by name, number, or tag…" />
+      <div class="chip"><strong>total:</strong> <span id="count">0</span></div>
+      <div class="chip"><strong>source:</strong> data/glyph_index.json</div>
+    </div>
+  </header>
+
+  <main class="grid" id="grid" aria-live="polite"></main>
+
+  <div id="empty" class="empty" style="display:none">
+    no entries yet. add your first glyph to <code>data/glyph_index.json</code> and push — the page auto-updates on deploy.
+  </div>
+
+  <footer>
+    <div class="bar"></div>
+    <div class="small">
+      c3 · connect · contribute · create — coherence returns through living systems. 
+      this library renders from on-chain published data and repo indices.
+    </div>
+  </footer>
+
+  <script>
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  const count = document.getElementById('count');
+  const q = document.getElementById('q');
+
+  let GLYPHS = [];
+
+  async function loadIndex(){
+    try{
+      const res = await fetch('data/glyph_index.json', {cache:'no-store'});
+      if(!res.ok) throw new Error('index not found');
+      const data = await res.json();
+      GLYPHS = Array.isArray(data) ? data : (data.items || []);
+      render(GLYPHS);
+    }catch(e){
+      console.warn('glyph index missing or invalid:', e);
+      GLYPHS = [];
+      render(GLYPHS);
+    }
+  }
+
+  function makeCard(g){
+    const el = document.createElement('article');
+    el.className = 'card halo';
+
+    const imgSrc = g.image || (g.paths && g.paths.png) || '';
+    const mdHref = g.paths?.md || '#';
+    const jsonHref = g.paths?.json || '#';
+    const ipfsHref = g.ipfs_cid ? `https://ipfs.io/ipfs/${g.ipfs_cid}` : null;
+
+    el.innerHTML = `
+      <a class="thumb" href="${ipfsHref || mdHref}" target="_blank" rel="noopener">
+        ${imgSrc ? `<img src="${imgSrc}" alt="${g.name || 'glyph'}" />` : ''}
+      </a>
+      <div class="body">
+        <div class="name">${g.name || 'untitled glyph'}</div>
+        <div class="meta">${g.codex_number ? g.codex_number + ' · ' : ''}${g.created || ''}</div>
+        <div class="tags">
+          ${(g.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}
+        </div>
+        <div class="links">
+          ${mdHref && mdHref !== '#' ? `<a class="btn" href="${mdHref}" target="_blank" rel="noopener">scroll</a>`:''}
+          ${jsonHref && jsonHref !== '#' ?
   </footer>
 </body>
 </html>
