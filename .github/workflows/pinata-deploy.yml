@@ -68,4 +68,13 @@ jobs:
           const encoded = '0x' + Buffer.from('e30101701220' + cid.substring(4), 'utf8').toString('hex');
           await resolver.setContenthash(namehash, encoded);
           console.log('✅ ENS contenthash updated on Base:', process.env.ENS_NAME, cid);
+              # 7. Success ping (optional)
+    - name: Send success ping
+      if: success()
+      env:
+        WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK }}
+      run: |
+        curl -X POST -H "Content-Type: application/json" \
+          -d "{\"text\": \"✅ C.O.I.L redeployed — new CID: https://c3dao.mypinata.cloud/ipfs/${{ steps.pin.outputs.cid }}  | Live at: https://c3dao.eth.limo\"}" \
+          $WEBHOOK_URL
         "
