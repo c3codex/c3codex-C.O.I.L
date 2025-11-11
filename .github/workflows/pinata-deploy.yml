@@ -1,61 +1,71 @@
-name: Deploy c3codex-C.O.I.L to IPFS via Pinata
+name: Deploy to IPFS via Pinata + Update ENS on Base
+
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # 1. Check out your repo
-      - uses: actions/checkout@v3
+    # 1. Checkout repo
+    - uses: actions/checkout@v3
 
-      # 2. Archive your build folder (everything in repo)
-      - name: Create site bundle
-        run: |
-          mkdir deploy
-          cp -r index.html assets C.O.I.L c3DAO deploy/
-          cd deploy && zip -r site_bundle.zip .
+    # 2. Verify Base RPC connection
+    - name: Verify Base RPC
+      run: |
+        echo "🔍 Checking Base RPC connection..."
+        curl -X POST ${{ secrets.INFURA_ID }} \
+          -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
+        echo "✅ Base network verified."
 
-      # 3. Upload ZIP to Pinata
-      - name: Upload to Pinata
-        id: pin
-        run: |
-          RESPONSE=$(curl -s -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
-            -H "Authorization: Bearer ${{ secrets.PINATA_JWT }}" \
-            -F "file=@deploy/site_bundle.zip")
-          echo "$RESPONSE"
-          CID=$(echo $RESPONSE | grep -o '"IpfsHash":"[^"]*' | cut -d'"' -f4)
-          echo "cid=$CID" >> $GITHUB_OUTPUT
+    # 3. Archive site files
+    - name: Create site bundle
+      run: |
+        mkdir -p deploy
+        cp -r index.html assets deploy/
+        cd deploy && zip -r site_bundle.zip .
 
-      # 4. Print the new CID in the workflow log
-      - name: Display CID
-        run: echo "✅ New site CID: ${{ steps.pin.outputs.cid }}"
+    # 4. Upload bundle to Pinata
+    - name: Upload to Pinata
+      id: pin
+      run: |
+        RESPONSE=$(curl -s -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
+          -H "Authorization: Bearer ${{ secrets.PINATA_JWT }}" \
+          -F "file=@deploy/site_bundle.zip")
+        echo "$RESPONSE"
+        CID=$(echo $RESPONSE | grep -o '"IpfsHash":"[^"]*' | cut -d'"' -f4)
+        echo "cid=$CID" >> $GITHUB_OUTPUT
 
-      # 5. (Optional) Output a preview gateway link
-      - name: Gateway URL
-        run: echo "https://c3dao.mypinata.cloud/ipfs/${{ steps.pin.outputs.cid }}"
-        # 6. Auto-update ENS Contenthash on Base
-- name: Update ENS Contenthash on Base
-  env:
-    ENS_NAME: "c3dao.eth"
-    WALLET_ADDRESS: "0x577688C874B9b81Aa3759CdcE381fb79922e7F27"
-    PRIVATE_KEY: ${{ secrets.ENS_WALLET_KEY }}
-    BASE_RPC_URL: "https://mainnet.base.org"
-    INFURA_ID: ${{ secrets.INFURA_ID }}
-  run: |
-    npm install -g ethers @ensdomains/eth-ens-namehash
-    node -e "
-    import { ethers } from 'ethers';
-    import namehashLib from '@ensdomains/eth-ens-namehash';
-    const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
-    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-    const namehash = namehashLib.hash(process.env.ENS_NAME);
-    const resolverAbi = ['function setContenthash(bytes32 node, bytes calldata hash) external'];
-    // Base resolver mirror (same contract interface)
-    const resolver = new ethers.Contract('0x3671E0C7F39C89A153E9581c6b96A3F2F06b9458', resolverAbi, wallet);
-    const cid = '${{ steps.pin.outputs.cid }}';
-    const encoded = '0x' + Buffer.from('e30101701220' + cid.substring(4), 'utf8').toString('hex');
-    await resolver.setContenthash(namehash, encoded);
-    console.log('✅ ENS contenthash updated on Base:', process.env.ENS_NAME, cid);
-    "
+    # 5. Print CID and preview link
+    - name: Display CID
+      run: echo "🌐 New site CID: ${{ steps.pin.outputs.cid }}"
+
+    - name: Gateway URL
+      run: echo "https://c3dao.mypinata.cloud/ipfs/${{ steps.pin.outputs.cid }}"
+
+    # 6. Auto-update ENS Contenthash on Base
+    - name: Update ENS Contenthash on Base
+      env:
+        ENS_NAME: "c3dao.eth"
+        WALLET_ADDRESS: "0x577688C874B9b81Aa3759CdcE381fb79922e7F27"
+        PRIVATE_KEY: ${{ secrets.ENS_WALLET_KEY }}
+        INFURA_ID: ${{ secrets.INFURA_ID }}
+      run: |
+        npm install -g ethers @ensdomains/eth-ens-namehash
+        node -e "
+          import { ethers } from 'ethers';
+          import namehashLib from '@ensdomains/eth-ens-namehash';
+          const provider = new ethers.JsonRpcProvider(process.env.INFURA_ID);
+          const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+          const namehash = namehashLib.hash(process.env.ENS_NAME);
+          const resolverAbi = ['function setContenthash(bytes32 node, bytes calldata hash) external'];
+          const resolver = new ethers.Contract('0x3671E0C7F39C89A153E9581c6b96A3F2F06b9458', resolverAbi, wallet);
+          const cid = '${{ steps.pin.outputs.cid }}';
+          const encoded = '0x' + Buffer.from('e30101701220' + cid.substring(4), 'utf8').toString('hex');
+          await resolver.setContenthash(namehash, encoded);
+          console.log('✅ ENS contenthash updated on Base:', process.env.ENS_NAME, cid);
+        "
