@@ -1,0 +1,37 @@
+name: Deploy c3codex-C.O.I.L to IPFS via Pinata
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Check out your repo
+      - uses: actions/checkout@v3
+
+      # 2. Archive your build folder (everything in repo)
+      - name: Create site bundle
+        run: |
+          mkdir deploy
+          cp -r index.html assets C.O.I.L c3DAO deploy/
+          cd deploy && zip -r site_bundle.zip .
+
+      # 3. Upload ZIP to Pinata
+      - name: Upload to Pinata
+        id: pin
+        run: |
+          RESPONSE=$(curl -s -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
+            -H "Authorization: Bearer ${{ secrets.PINATA_JWT }}" \
+            -F "file=@deploy/site_bundle.zip")
+          echo "$RESPONSE"
+          CID=$(echo $RESPONSE | grep -o '"IpfsHash":"[^"]*' | cut -d'"' -f4)
+          echo "cid=$CID" >> $GITHUB_OUTPUT
+
+      # 4. Print the new CID in the workflow log
+      - name: Display CID
+        run: echo "✅ New site CID: ${{ steps.pin.outputs.cid }}"
+
+      # 5. (Optional) Output a preview gateway link
+      - name: Gateway URL
+        run: echo "https://c3dao.mypinata.cloud/ipfs/${{ steps.pin.outputs.cid }}"
