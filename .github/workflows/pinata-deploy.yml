@@ -42,6 +42,7 @@ jobs:
     WALLET_ADDRESS: "0x577688C874B9b81Aa3759CdcE381fb79922e7F27"
     PRIVATE_KEY: ${{ secrets.ENS_WALLET_KEY }}
     BASE_RPC_URL: "https://mainnet.base.org"
+    INFURA_ID: ${{ secrets.INFURA_ID }}
   run: |
     npm install -g ethers @ensdomains/eth-ens-namehash
     node -e "
