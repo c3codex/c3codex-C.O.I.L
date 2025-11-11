@@ -35,3 +35,26 @@ jobs:
       # 5. (Optional) Output a preview gateway link
       - name: Gateway URL
         run: echo "https://c3dao.mypinata.cloud/ipfs/${{ steps.pin.outputs.cid }}"
+        # 6. Auto-update ENS Contenthash on Base
+- name: Update ENS Contenthash on Base
+  env:
+    ENS_NAME: "c3dao.eth"
+    WALLET_ADDRESS: "0x577688C874B9b81Aa3759CdcE381fb79922e7F27"
+    PRIVATE_KEY: ${{ secrets.ENS_WALLET_KEY }}
+    BASE_RPC_URL: "https://mainnet.base.org"
+  run: |
+    npm install -g ethers @ensdomains/eth-ens-namehash
+    node -e "
+    import { ethers } from 'ethers';
+    import namehashLib from '@ensdomains/eth-ens-namehash';
+    const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
+    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+    const namehash = namehashLib.hash(process.env.ENS_NAME);
+    const resolverAbi = ['function setContenthash(bytes32 node, bytes calldata hash) external'];
+    // Base resolver mirror (same contract interface)
+    const resolver = new ethers.Contract('0x3671E0C7F39C89A153E9581c6b96A3F2F06b9458', resolverAbi, wallet);
+    const cid = '${{ steps.pin.outputs.cid }}';
+    const encoded = '0x' + Buffer.from('e30101701220' + cid.substring(4), 'utf8').toString('hex');
+    await resolver.setContenthash(namehash, encoded);
+    console.log('✅ ENS contenthash updated on Base:', process.env.ENS_NAME, cid);
+    "
