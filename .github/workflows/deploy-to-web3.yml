@@ -1,0 +1,22 @@
+name: Deploy c3 C.O.I.L site to IPFS via Web3.Storage
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Upload to Web3.Storage
+        uses: web3-storage/add-to-web3@v2
+        with:
+          web3_token: ${{ secrets.WEB3_STORAGE_TOKEN }}
+          path: .
+          wrapWithDirectory: true
+
+      - name: Log new CID
+        run: echo "✅ c3 C.O.I.L site uploaded to Web3.Storage"
