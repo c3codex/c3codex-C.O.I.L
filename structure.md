@@ -1,0 +1,25 @@
+/measures-of-inanna/
+   /obsidian-gates/
+      gate-01/
+         artwork-original.png
+         artwork-render.png
+         text.md
+         mandala.png (optional)
+      ...
+      gate-07/
+   /crystal-epithets/
+      epithet-01/
+      ...
+      epithet-09/
+   /marble-frontmatter/
+      dedication.md
+      invocation.md
+      epigraph.md
+      blessing.md
+   /mandalas/
+      mandala-01.png
+      ...
+      mandala-13.png
+STRUCTURE.md
+README.md
+launch-plan.md
