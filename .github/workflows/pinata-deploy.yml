@@ -10,18 +10,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repo
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      # 2. Verify Base RPC connection
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install ENS dependencies
+        run: |
+          npm install ethers viem dotenv
+
       - name: Verify Base RPC
         run: |
-          echo "🔍 Checking Base RPC connection..."
+          echo "Checking Base RPC connection..."
           curl -X POST ${{ secrets.INFURA_ID }} \
-            -H "Content-Type: application/json" \
-            -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
+          -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
           echo "✅ Base network verified."
-
       # 3. Archive site files
       - name: Create site bundle
         run: |
