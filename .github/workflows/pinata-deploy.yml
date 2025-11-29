@@ -20,73 +20,48 @@ jobs:
         with:
           node-version: 20
 
-      # 3. Install ENS dependencies
+      # 3. Install dependencies
       - name: Install ENS dependencies
         run: |
-          npm install viem dotenv
+          npm install viem ethers @ensdomains/ensjs dotenv
 
-      # 4. Upload full site to Pinata (IPFS)
+      # 4. Upload full site to Pinata
       - name: Upload full site to Pinata (IPFS)
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
-          echo "Zipping site directory..."
           zip -r site_bundle.zip .
-
-          echo "Uploading site bundle to Pinata..."
           RESPONSE=$(curl -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
             -H "Authorization: Bearer $PINATA_JWT" \
             -H "Accept: application/json" \
             -F "file=@site_bundle.zip")
-
-          echo "Pinata response: $RESPONSE"
-
           CID=$(echo $RESPONSE | jq -r '.IpfsHash')
           echo "CID=$CID" >> $GITHUB_ENV
-          echo "Uploaded to IPFS with CID: $CID"
 
-      # 5. Update ENS Contenthash on Ethereum mainnet
-      -      - name: Update ENS Contenthash on Ethereum
+      # 5. Update ENS Contenthash
+      - name: Update ENS Contenthash on Ethereum
         env:
           PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
           INFURA_MAINNET_KEY: ${{ secrets.INFURA_MAINNET_KEY }}
-          ENS_NAME: "c3dao.eth"
+          ENS_NAME: c3dao.eth
         run: |
-          echo "Updating ENS contenthash on Ethereum..."
-
           node <<EOF
-          import { getPublicClient, http, createWalletClient } from "viem";
-          import { mainnet } from "viem/chains";
           import { ethers } from "ethers";
           import { namehash } from "@ensdomains/ensjs/utils";
-
-          const cid = process.env.CID;
-          const privateKey = process.env.PRIVATE_KEY;
 
           const provider = new ethers.providers.JsonRpcProvider(
             "https://mainnet.infura.io/v3/" + process.env.INFURA_MAINNET_KEY
           );
 
-          // Wallet
-          const wallet = new ethers.Wallet(privateKey, provider);
-
-          // Resolver lookup via Provider
+          const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
           const resolver = await provider.getResolver(process.env.ENS_NAME);
+          const cid = process.env.CID;
 
-          if (!resolver) {
-            console.error("No resolver found for ENS name.");
-            process.exit(1);
-          }
-
-          // Build the IPFS CIDv1 contenthash
           const codec = "e3010170";
           const contentHashHex =
             "0x" + codec + Buffer.from(cid).toString("hex");
 
-          // Send TX
           const tx = await resolver.setContentHash(contentHashHex);
-          console.log("TX sent:", tx.hash);
-
-          const receipt = await tx.wait();
-          console.log("Transaction mined:", receipt.transactionHash);
+          console.log("TX:", tx.hash);
+          await tx.wait();
           EOF
