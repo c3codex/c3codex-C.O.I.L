@@ -46,7 +46,7 @@ jobs:
           echo "Uploaded to IPFS with CID: $CID"
 
       # 5. Update ENS Contenthash on Ethereum mainnet
-      - name: Update ENS Contenthash on Ethereum
+      -      - name: Update ENS Contenthash on Ethereum
         env:
           PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
           INFURA_MAINNET_KEY: ${{ secrets.INFURA_MAINNET_KEY }}
@@ -55,36 +55,38 @@ jobs:
           echo "Updating ENS contenthash on Ethereum..."
 
           node <<EOF
-          import { createWalletClient, http } from "viem";
+          import { getPublicClient, http, createWalletClient } from "viem";
           import { mainnet } from "viem/chains";
-          import { namehash } from "viem/utils";
+          import { ethers } from "ethers";
+          import { namehash } from "@ensdomains/ensjs/utils";
 
-          const privateKey = process.env.PRIVATE_KEY;
           const cid = process.env.CID;
+          const privateKey = process.env.PRIVATE_KEY;
 
-          const client = createWalletClient({
-            account: privateKey,
-            chain: mainnet,
-            transport: http(`https://mainnet.infura.io/v3/${process.env.INFURA_MAINNET_KEY}`)
-          });
+          const provider = new ethers.providers.JsonRpcProvider(
+            "https://mainnet.infura.io/v3/" + process.env.INFURA_MAINNET_KEY
+          );
 
-          const nodeHash = namehash(process.env.ENS_NAME);
+          // Wallet
+          const wallet = new ethers.Wallet(privateKey, provider);
 
-          // Construct contenthash for IPFS CIDv1
-          const codec = "e3010170";
-          const contentHashHex = "0x" + codec + Buffer.from(cid).toString("hex");
-
-          const resolver = await client.getEnsResolver({ name: process.env.ENS_NAME });
+          // Resolver lookup via Provider
+          const resolver = await provider.getResolver(process.env.ENS_NAME);
 
           if (!resolver) {
             console.error("No resolver found for ENS name.");
             process.exit(1);
           }
 
-          const tx = await client.sendTransaction({
-            to: resolver,
-            data: contentHashHex
-          });
+          // Build the IPFS CIDv1 contenthash
+          const codec = "e3010170";
+          const contentHashHex =
+            "0x" + codec + Buffer.from(cid).toString("hex");
 
-          console.log("TX sent:", tx);
+          // Send TX
+          const tx = await resolver.setContentHash(contentHashHex);
+          console.log("TX sent:", tx.hash);
+
+          const receipt = await tx.wait();
+          console.log("Transaction mined:", receipt.transactionHash);
           EOF
