@@ -10,40 +10,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repo
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      # 2. Setup Node
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
+      # 3. Install ENS dependencies
       - name: Install ENS dependencies
         run: |
           npm install ethers viem dotenv
 
-      - name: Upload to Pinata (IPFS)
+      # 4. Upload entire site folder to Pinata
+      - name: Upload full site to Pinata (IPFS)
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
-          npm install -g pinata-cli
-          pinata upload ./ --jwt="$PINATA_JWT" > pinata_output.txt
-          cat pinata_output.txt
-          CID=$(grep -o '"IpfsHash":"[^"]*' pinata_output.txt | cut -d'"' -f4)
-          echo "CID=$CID" >> $GITHUB_ENV
+          echo "Zipping site directory..."
+          zip -r site_bundle.zip .
 
+          echo "Uploading site bundle to Pinata..."
+          RESPONSE=$(curl -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
+            -H "Authorization: Bearer $PINATA_JWT" \
+            -H "Accept: application/json" \
+            -F "file=@site_bundle.zip")
+
+          echo "Pinata response: $RESPONSE"
+
+          CID=$(echo $RESPONSE | jq -r '.IpfsHash')
+          echo "CID=$CID" >> $GITHUB_ENV
+          echo "Uploaded to IPFS with CID: $CID"
+
+      # 5. Update ENS contenthash on Ethereum mainnet
       - name: Update ENS Contenthash on Ethereum
         env:
           PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
-          INFURA_KEY: ${{ secrets.INFURA_MAINNET_KEY }}
+          INFURA_MAINNET_KEY: ${{ secrets.INFURA_MAINNET_KEY }}
           ENS_NAME: "c3dao.eth"
         run: |
           echo "Updating ENS contenthash on Ethereum..."
+
           node <<EOF
           import { ethers } from "ethers";
           import { namehash } from "ethers/lib/utils.js";
 
-          const provider = new ethers.providers.InfuraProvider("homestead", process.env.INFURA_KEY);
+          const provider = new ethers.providers.InfuraProvider("homestead", process.env.INFURA_MAINNET_KEY);
           const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
           const resolverABI = [
@@ -54,7 +69,11 @@ jobs:
           const node = namehash(name);
 
           const cid = process.env.CID;
-          const contenthash = "0x" + Buffer.from("e3010170" + cid.replace("bafy", ""), "utf-8").toString("hex");
+
+          // Create contenthash for IPFS CIDv1
+          const multicodecPrefix = "e3010170"; // IPFS CIDv1 prefix
+          const hex = multicodecPrefix + Buffer.from(cid).toString("hex");
+          const contenthash = "0x" + hex;
 
           const resolverAddress = await provider.getResolver(name).then(r => r.address);
           const resolver = new ethers.Contract(resolverAddress, resolverABI, wallet);
@@ -62,5 +81,5 @@ jobs:
           const tx = await resolver.setContenthash(node, contenthash);
           console.log("TX sent:", tx.hash);
           await tx.wait();
-          console.log("ENS contenthash updated successfully:", cid);
+          console.log("ENS contenthash updated successfully with CID:", cid);
           EOF
