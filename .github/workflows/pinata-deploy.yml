@@ -46,22 +46,36 @@ jobs:
           ENS_NAME: c3dao.eth
         run: |
           node <<EOF
-          import { ethers } from "ethers";
-          import { namehash } from "@ensdomains/ensjs/utils";
+          const { ethers } = require("ethers");
+          const { namehash } = require("@ensdomains/ensjs/utils");
 
           const provider = new ethers.providers.JsonRpcProvider(
             "https://mainnet.infura.io/v3/" + process.env.INFURA_MAINNET_KEY
           );
 
           const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-          const resolver = await provider.getResolver(process.env.ENS_NAME);
           const cid = process.env.CID;
 
-          const codec = "e3010170";
-          const contentHashHex =
-            "0x" + codec + Buffer.from(cid).toString("hex");
+          async function main() {
+            const resolver = await provider.getResolver(process.env.ENS_NAME);
+            if (!resolver) {
+              console.error("No resolver for ENS name");
+              process.exit(1);
+            }
 
-          const tx = await resolver.setContentHash(contentHashHex);
-          console.log("TX:", tx.hash);
-          await tx.wait();
+            // Build an IPFS contenthash for CIDv1
+            const codec = "e3010170";
+            const contentHashHex = "0x" + codec + Buffer.from(cid).toString("hex");
+
+            const tx = await resolver.setContentHash(contentHashHex);
+            console.log("TX:", tx.hash);
+
+            const receipt = await tx.wait();
+            console.log("Mined:", receipt.transactionHash);
+          }
+
+          main().catch(err => {
+            console.error(err);
+            process.exit(1);
+          });
           EOF
