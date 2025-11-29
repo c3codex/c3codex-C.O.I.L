@@ -44,7 +44,11 @@ jobs:
           PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
           INFURA_MAINNET_KEY: ${{ secrets.INFURA_MAINNET_KEY }}
           ENS_NAME: c3dao.eth
+          CID: ${{ env.CID }}
         run: |
+          npm uninstall ethers || true
+          npm install ethers@5 --force
+
           node <<EOF
           const { ethers } = require("ethers");
           const { namehash } = require("@ensdomains/ensjs/utils");
@@ -57,14 +61,16 @@ jobs:
           const cid = process.env.CID;
 
           async function main() {
+            console.log("Updating ENS contenthash for:", process.env.ENS_NAME);
+
             const resolver = await provider.getResolver(process.env.ENS_NAME);
             if (!resolver) {
-              console.error("No resolver for ENS name");
+              console.error("❌ No resolver set for ENS name");
               process.exit(1);
             }
 
-            // Build an IPFS contenthash for CIDv1
-            const codec = "e3010170";
+            // Create an IPFS contenthash
+            const codec = "e3010170"; // IPFS CIDv1 multicodec prefix
             const contentHashHex = "0x" + codec + Buffer.from(cid).toString("hex");
 
             const tx = await resolver.setContentHash(contentHashHex);
