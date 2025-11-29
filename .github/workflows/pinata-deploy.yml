@@ -45,8 +45,7 @@ jobs:
           echo "CID=$CID" >> $GITHUB_ENV
           echo "Uploaded to IPFS with CID: $CID"
 
-      # 5. Update ENS contenthash on Ethereum mainnet
-      - name: Update ENS Contenthash on Ethereum
+      # 5. Update ENS contenthash on Ethereum       - name: Update ENS Contenthash on Ethereum
         env:
           PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
           INFURA_MAINNET_KEY: ${{ secrets.INFURA_MAINNET_KEY }}
@@ -55,31 +54,49 @@ jobs:
           echo "Updating ENS contenthash on Ethereum..."
 
           node <<EOF
-          import { ethers } from "ethers";
-          import { namehash } from "ethers/lib/utils.js";
+          import { createWalletClient, http } from "viem";
+          import { mainnet } from "viem/chains";
+          import { namehash, encodeAbiParameters, toHex } from "viem/utils";
 
-          const provider = new ethers.providers.InfuraProvider("homestead", process.env.INFURA_MAINNET_KEY);
-          const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-
-          const resolverABI = [
-            "function setContenthash(bytes32 node, bytes calldata hash) external"
-          ];
-
-          const name = process.env.ENS_NAME;
-          const node = namehash(name);
-
+          const privateKey = process.env.PRIVATE_KEY;
           const cid = process.env.CID;
 
-          // Create contenthash for IPFS CIDv1
-          const multicodecPrefix = "e3010170"; // IPFS CIDv1 prefix
-          const hex = multicodecPrefix + Buffer.from(cid).toString("hex");
-          const contenthash = "0x" + hex;
+          // Viem client
+          const client = createWalletClient({
+            account: privateKey,
+            chain: mainnet,
+            transport: http(`https://mainnet.infura.io/v3/${process.env.INFURA_MAINNET_KEY}`)
+          });
 
-          const resolverAddress = await provider.getResolver(name).then(r => r.address);
-          const resolver = new ethers.Contract(resolverAddress, resolverABI, wallet);
+          const node = namehash(process.env.ENS_NAME);
 
-          const tx = await resolver.setContenthash(node, contenthash);
-          console.log("TX sent:", tx.hash);
-          await tx.wait();
-          console.log("ENS contenthash updated successfully with CID:", cid);
+          // Convert CID to contenthash format
+          const codec = "e3010170"; // cidv1 dag-pb
+          const contentHashHex = "0x" + codec + Buffer.from(cid).toString("hex");
+
+          // ABI encoding for setContenthash(bytes32,bytes)
+          const data = encodeAbiParameters(
+            [
+              { type: "bytes32", name: "node" },
+              { type: "bytes", name: "hash" }
+            ],
+            [node, contentHashHex]
+          );
+
+          // resolver address
+          const resolver = await client.getEnsResolver({ name: process.env.ENS_NAME });
+
+          if (!resolver) {
+            console.error("No resolver found for ENS name.");
+            process.exit(1);
+          }
+
+          console.log("Sending transaction to resolver", resolver);
+
+          const tx = await client.sendTransaction({
+            to: resolver,
+            data
+          });
+
+          console.log("TX sent:", tx);
           EOF
