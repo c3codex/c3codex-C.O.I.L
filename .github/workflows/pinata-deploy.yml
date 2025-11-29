@@ -23,9 +23,9 @@ jobs:
       # 3. Install ENS dependencies
       - name: Install ENS dependencies
         run: |
-          npm install ethers viem dotenv
+          npm install viem dotenv
 
-      # 4. Upload entire site folder to Pinata
+      # 4. Upload full site to Pinata (IPFS)
       - name: Upload full site to Pinata (IPFS)
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
@@ -45,7 +45,8 @@ jobs:
           echo "CID=$CID" >> $GITHUB_ENV
           echo "Uploaded to IPFS with CID: $CID"
 
-      # 5. Update ENS contenthash on Ethereum       - name: Update ENS Contenthash on Ethereum
+      # 5. Update ENS Contenthash on Ethereum mainnet
+      - name: Update ENS Contenthash on Ethereum
         env:
           PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
           INFURA_MAINNET_KEY: ${{ secrets.INFURA_MAINNET_KEY }}
@@ -56,34 +57,23 @@ jobs:
           node <<EOF
           import { createWalletClient, http } from "viem";
           import { mainnet } from "viem/chains";
-          import { namehash, encodeAbiParameters, toHex } from "viem/utils";
+          import { namehash } from "viem/utils";
 
           const privateKey = process.env.PRIVATE_KEY;
           const cid = process.env.CID;
 
-          // Viem client
           const client = createWalletClient({
             account: privateKey,
             chain: mainnet,
             transport: http(`https://mainnet.infura.io/v3/${process.env.INFURA_MAINNET_KEY}`)
           });
 
-          const node = namehash(process.env.ENS_NAME);
+          const nodeHash = namehash(process.env.ENS_NAME);
 
-          // Convert CID to contenthash format
-          const codec = "e3010170"; // cidv1 dag-pb
+          // Construct contenthash for IPFS CIDv1
+          const codec = "e3010170";
           const contentHashHex = "0x" + codec + Buffer.from(cid).toString("hex");
 
-          // ABI encoding for setContenthash(bytes32,bytes)
-          const data = encodeAbiParameters(
-            [
-              { type: "bytes32", name: "node" },
-              { type: "bytes", name: "hash" }
-            ],
-            [node, contentHashHex]
-          );
-
-          // resolver address
           const resolver = await client.getEnsResolver({ name: process.env.ENS_NAME });
 
           if (!resolver) {
@@ -91,11 +81,9 @@ jobs:
             process.exit(1);
           }
 
-          console.log("Sending transaction to resolver", resolver);
-
           const tx = await client.sendTransaction({
             to: resolver,
-            data
+            data: contentHashHex
           });
 
           console.log("TX sent:", tx);
