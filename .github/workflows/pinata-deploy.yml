@@ -1,4 +1,4 @@
-name: Deploy to IPFS via Pinata + Update ENS on Base
+name: Deploy to IPFS and Update ENS (Ethereum)
 
 on:
   push:
@@ -22,76 +22,45 @@ jobs:
         run: |
           npm install ethers viem dotenv
 
-      - name: Verify Base RPC
-        run: |
-          echo "Checking Base RPC connection..."
-          curl -X POST ${{ secrets.INFURA_ID }} \
-          -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
-          echo "✅ Base network verified."
-      # 3. Archive site files
-      - name: Create site bundle
-        run: |
-          mkdir -p deploy
-          cp -r index.html assets deploy/
-          cd deploy && zip -r site_bundle.zip .
-
-      # 4. Upload bundle to Pinata
-      - name: Upload to Pinata
-        id: pin
-        run: |
-          RESPONSE=$(curl -s -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
-            -H "Authorization: Bearer ${{ secrets.PINATA_JWT }}" \
-            -F "file=@deploy/site_bundle.zip")
-          echo "$RESPONSE"
-          CID=$(echo $RESPONSE | grep -o '"IpfsHash":"[^"]*' | cut -d'"' -f4)
-          echo "cid=$CID" >> $GITHUB_OUTPUT
-
-      # 5. Print CID and preview link
-      - name: Display CID
-        run: |
-          echo "🌐 New site CID: ${{ steps.pin.outputs.cid }}"
-
-      - name: Gateway URL
-        run: |
-          echo "https://c3dao.mypinata.cloud/ipfs/${{ steps.pin.outputs.cid }}"
-
-      # 6. Auto-update ENS Contenthash on Base
-      - name: Update ENS Contenthash on Base
+      - name: Upload to Pinata (IPFS)
         env:
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+        run: |
+          npm install -g pinata-cli
+          pinata upload ./ --jwt="$PINATA_JWT" > pinata_output.txt
+          cat pinata_output.txt
+          CID=$(grep -o '"IpfsHash":"[^"]*' pinata_output.txt | cut -d'"' -f4)
+          echo "CID=$CID" >> $GITHUB_ENV
+
+      - name: Update ENS Contenthash on Ethereum
+        env:
+          PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
+          INFURA_KEY: ${{ secrets.INFURA_MAINNET_KEY }}
           ENS_NAME: "c3dao.eth"
-          WALLET_ADDRESS: "0x577688C874B9b81Aa3759CdcE381fb79922e7F27"
-          PRIVATE_KEY: ${{ secrets.ENS_WALLET_KEY }}
-          INFURA_ID: ${{ secrets.INFURA_ID }}
         run: |
-          npm install -g ethers @ensdomains/eth-ens-namehash
-          node <<'NODE'
-          import { ethers } from 'ethers';
-          import namehashLib from '@ensdomains/eth-ens-namehash';
-          (async () => {
-            const provider = new ethers.JsonRpcProvider(process.env.INFURA_ID);
-            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-            const namehash = namehashLib.hash(process.env.ENS_NAME);
-            const resolverAbi = ['function setContenthash(bytes32 node, bytes calldata hash) external'];
-            const resolver = new ethers.Contract('0x3671E0C7F39C89A153E9581c6b96A3F2F06b9458', resolverAbi, wallet);
-            const cid = process.env.CID || '${{ steps.pin.outputs.cid }}';
-            // If you need to convert CID to contenthash, perform correct encoding here:
-            // NOTE: The original encoding in your file looked suspect; confirm this logic.
-            const encoded = '0x' + Buffer.from('e30101701220' + cid.substring(4), 'utf8').toString('hex');
-            await resolver.setContenthash(namehash, encoded);
-            console.log('✅ ENS contenthash updated on Base:', process.env.ENS_NAME, cid);
-          })().catch(err => {
-            console.error(err);
-            process.exit(1);
-          });
-          NODE
+          echo "Updating ENS contenthash on Ethereum..."
+          node <<EOF
+          import { ethers } from "ethers";
+          import { namehash } from "ethers/lib/utils.js";
 
-      # 7. Success ping (optional)
-      - name: Send success ping
-        if: success()
-        env:
-          WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK }}
-        run: |
-          curl -X POST -H "Content-Type: application/json" \
-            -d "{\"text\": \"✅ C.O.I.L redeployed — new CID: https://c3dao.mypinata.cloud/ipfs/${{ steps.pin.outputs.cid }}  | Live at: https://c3dao.eth.limo\"}" \
-            $WEBHOOK_URL
+          const provider = new ethers.providers.InfuraProvider("homestead", process.env.INFURA_KEY);
+          const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+          const resolverABI = [
+            "function setContenthash(bytes32 node, bytes calldata hash) external"
+          ];
+
+          const name = process.env.ENS_NAME;
+          const node = namehash(name);
+
+          const cid = process.env.CID;
+          const contenthash = "0x" + Buffer.from("e3010170" + cid.replace("bafy", ""), "utf-8").toString("hex");
+
+          const resolverAddress = await provider.getResolver(name).then(r => r.address);
+          const resolver = new ethers.Contract(resolverAddress, resolverABI, wallet);
+
+          const tx = await resolver.setContenthash(node, contenthash);
+          console.log("TX sent:", tx.hash);
+          await tx.wait();
+          console.log("ENS contenthash updated successfully:", cid);
+          EOF
