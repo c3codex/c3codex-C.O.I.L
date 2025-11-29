@@ -39,49 +39,27 @@ jobs:
           echo "CID=$CID" >> $GITHUB_ENV
 
       # 5. Update ENS Contenthash
-      - name: Update ENS Contenthash on Ethereum
+      - name: Upload full site to Pinata (IPFS)
         env:
-          PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
-          INFURA_MAINNET_KEY: ${{ secrets.INFURA_MAINNET_KEY }}
-          ENS_NAME: c3dao.eth
-          CID: ${{ env.CID }}
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
-          npm uninstall ethers || true
-          npm install ethers@5 --force
+          echo "Zipping site directory..."
+          zip -r site_bundle.zip .
 
-          node <<EOF
-          const { ethers } = require("ethers");
-          const { namehash } = require("@ensdomains/ensjs/utils");
+          echo "Uploading site bundle to Pinata..."
+          RESPONSE=$(curl -s -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
+            -H "Authorization: Bearer $PINATA_JWT" \
+            -H "Accept: application/json" \
+            -F "file=@site_bundle.zip")
 
-          const provider = new ethers.providers.JsonRpcProvider(
-            "https://mainnet.infura.io/v3/" + process.env.INFURA_MAINNET_KEY
-          );
+          echo "Pinata response: $RESPONSE"
 
-          const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-          const cid = process.env.CID;
+          CID=$(echo "$RESPONSE" | jq -r '.IpfsHash')
 
-          async function main() {
-            console.log("Updating ENS contenthash for:", process.env.ENS_NAME);
+          if [ -z "$CID" ] || [ "$CID" = "null" ]; then
+            echo "❌ ERROR: CID could not be extracted."
+            exit 1
+          fi
 
-            const resolver = await provider.getResolver(process.env.ENS_NAME);
-            if (!resolver) {
-              console.error("❌ No resolver set for ENS name");
-              process.exit(1);
-            }
-
-            // Create an IPFS contenthash
-            const codec = "e3010170"; // IPFS CIDv1 multicodec prefix
-            const contentHashHex = "0x" + codec + Buffer.from(cid).toString("hex");
-
-            const tx = await resolver.setContentHash(contentHashHex);
-            console.log("TX:", tx.hash);
-
-            const receipt = await tx.wait();
-            console.log("Mined:", receipt.transactionHash);
-          }
-
-          main().catch(err => {
-            console.error(err);
-            process.exit(1);
-          });
-          EOF
+          echo "CID=$CID" >> $GITHUB_ENV
+          echo "Extracted CID: $CID"
