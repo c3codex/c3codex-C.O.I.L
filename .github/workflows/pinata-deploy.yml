@@ -58,9 +58,11 @@ jobs:
 
           cat << 'EOF' > update-ens.mjs
           import { ethers } from "ethers";
-          import { namehash } from "viem/utils";
 
           const cid = process.env.CID;
+
+          // Use ethers.utils.namehash
+          const node = ethers.utils.namehash("c3dao.eth");
 
           const provider = new ethers.JsonRpcProvider(
             `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`
@@ -74,8 +76,8 @@ jobs:
           ];
           const resolver = new ethers.Contract(resolverAddress, resolverABI, wallet);
 
-          const node = namehash("c3dao.eth");
-          const contenthash = "0xe30101701220" + cid; // IPFS contenthash encoding
+          // IPFS contenthash format
+          const contenthash = "0xe30101701220" + cid;
 
           console.log("Setting new contenthash:", contenthash);
 
