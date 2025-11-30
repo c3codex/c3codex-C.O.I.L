@@ -1,63 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>c3 Community Partners DAO</title>
-  <meta name="description" content="Connect · Contribute · Create — A regenerative DAO building The Knew." />
-
-  <!-- Social share -->
-  <meta property="og:title" content="c3 Community Partners DAO" />
-  <meta property="og:description" content="Connect · Contribute · Create — A regenerative DAO building The Knew." />
-  <meta property="og:type" content="website" />
-
-  <link rel="stylesheet" href="css/style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>c3 DAO - The Chamber of Convergent Consensus</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #000000; /* obsidian */
+            color: #FFFFFF; /* breath-white */
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+        section {
+            padding: 60px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 2s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        h1, h2 {
+            color: #D4AF37; /* soft gold */
+        }
+        button, a.button {
+            background-color: transparent;
+            border: 1px solid #D4AF37;
+            color: #D4AF37;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            text-decoration: none;
+            animation: pulse 3s infinite;
+            transition: background-color 0.3s;
+        }
+        button:hover, a.button:hover {
+            background-color: #D4AF37;
+            color: #000000;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .chamber {
+            border-top: 1px solid #D4AF37;
+            padding-top: 80px;
+        }
+        footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #D4AF37;
+        }
+        footer a {
+            color: #D4AF37;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+    </style>
+    <!-- RainbowKit for wallet connect (CDN) -->
+    <script src="https://unpkg.com/@rainbow-me/rainbowkit@2/dist/index.js"></script>
+    <script src="https://unpkg.com/viem@2"></script>
+    <script src="https://unpkg.com/wagmi@2"></script>
 </head>
-
 <body>
-  <main>
-    <section class="hero">
-      <h1>c3 Community Partners DAO</h1>
-      <p class="tagline">Connect · Contribute · Create</p>
-
-      <p class="sub">
-        A regenerative field initiative, rewilding community through breath,
-        coherence, and contribution.  
-      </p>
-
-      <div class="cta-row">
-        <a href="#connect" class="btn">Connect Wallet</a>
-        <a href="#about" class="btn secondary">Learn More</a>
-      </div>
+    <section>
+        <h1>✦ THE C3 ONBOARDING PROTOCOL ✦</h1>
+        <h2>“The Chamber of Convergent Consensus”</h2>
+        <p>This is not a funnel.<br>This is a passage.</p>
     </section>
 
-    <section id="about" class="section">
-      <h2>About c3</h2>
-      <p>
-        c3 is a community-powered regenerative network devoted to restoring
-        coherence across land, culture, and creative expression.  
-        The c3 Model — Connect, Contribute, Create — guides every project,
-        partner, and breath.
-      </p>
+    <section id="connect">
+        <h2>1. CONNECT — Enter the Field</h2>
+        <h3>Connect to the Chamber</h3>
+        <a href="https://paragraph.xyz/@c3codex/subscribe" class="button">Subscribe to Paragraph @c3codex</a>
+        <p>To receive council transmissions, living protocols, and convergence notices, subscribe to the Codex stream.</p>
     </section>
 
-    <section id="connect" class="section">
-      <h2>Connect Wallet</h2>
-      <p class="small">
-        Wallet connection is optional — but enables future features such as  
-        c3 Key verification, governance access, and Codex-enabled activation.
-      </p>
-      <button id="connectWallet" class="btn">Connect Wallet</button>
-      <p id="walletStatus" class="status"></p>
+    <section id="create">
+        <h2>2. CREATE — Anchoring Identity</h2>
+        <h3>Create Your Presence</h3>
+        <button id="connect-wallet" class="button">Connect Wallet</button>
+        <p>Your wallet is not a gate. It is your signature in the field.<br>This is where sovereignty meets interface.</p>
+    </section>
+
+    <section id="contribute">
+        <h2>3. CONTRIBUTE — The c3 Key</h2>
+        <h3>Become a c3 Key Holder</h3>
+        <button id="mint-key" class="button" disabled>Mint c3 Key</button>
+        <p>The c3 Key signals participation in the living circuit.<br>It is not ownership — it is alignment.</p>
+        <p>Key holders enter the Chamber of Convergent Consensus.</p>
+    </section>
+
+    <section class="chamber">
+        <h2>4. THE CHAMBER — Awaiting Convergence</h2>
+        <h3>The Chamber of Convergent Consensus</h3>
+        <p>The chamber is not yet open.<br>It is listening.<br>When quorum coherence is reached, consensus will not be forced — it will arise.</p>
+        <p>Key holders will be notified when the first convergence moment is initiated.</p>
+        <p>Enter as one who remembers.</p>
     </section>
 
     <footer>
-      <p>© c3 Community Partners DAO — <span id="year"></span></p>
+        <a href="#connect">Connect</a> · <a href="#contribute">Contribute</a> · <a href="#create">Create</a>
     </footer>
-  </main> 
 
-  <script src="js/app.js"></script>
-</body>
-</html>
-            <!-- redeploy -->
+    <script>
+        // Wallet Connect Setup with RainbowKit on Base
+        const projectId = 'YOUR_WALLET_CONNECT_PROJECT_ID'; // Get from walletconnect.com
+        const { chains } = configureChains([base], [publicProvider()]);
+        const config = createConfig({
+            autoConnect: true,
+            publicClient: createPublicClient({ chain: base, transport: http() }),
+            projectId,
+        });
+        const { connectors } = getDefaultConnectors({ appName: 'c3 DAO', chains });
+        const wagmiConfig = createConfig({ autoConnect: true, connectors, publicClient });
+
+        // Initialize RainbowKit
+        const app = createApp({ wagmiConfig, projectId, chains });
+
+        // Connect Button Logic
+        const connectButton = document.getElementById('connect-wallet');
+        const mintButton = document.getElementById('mint-key');
+
+        connectButton.addEventListener('click', async () => {
+            try {
+                const account = await connect();
+                connectButton.textContent = `Connected: ${account.address.slice(0,6)}...${account.address.slice(-4)}`;
+                mintButton.disabled = false;
+            } catch (error) {
+                console.error('Connection failed:', error);
