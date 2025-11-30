@@ -57,12 +57,10 @@ jobs:
           echo "Updating ENS contenthash..."
 
           cat << 'EOF' > update-ens.mjs
-          import { ethers } from "ethers";
+          import { ethers, namehash } from "ethers";
 
           const cid = process.env.CID;
-
-          // Use ethers.utils.namehash
-          const node = ethers.utils.namehash("c3dao.eth");
+          const node = namehash("c3dao.eth");   // <-- CORRECT v6 usage
 
           const provider = new ethers.JsonRpcProvider(
             `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`
@@ -70,16 +68,19 @@ jobs:
 
           const wallet = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
 
-          const resolverAddress = "0x4976fb03c32e5b8cfe2b6ccb31c09ba78ebaba41"; // Public Resolver
+          // ENS Public Resolver
+          const resolverAddress = "0x4976fb03c32e5b8cfe2b6ccb31c09ba78ebaba41";
+
           const resolverABI = [
             "function setContenthash(bytes32 node, bytes hash) public"
           ];
+
           const resolver = new ethers.Contract(resolverAddress, resolverABI, wallet);
 
-          // IPFS contenthash format
-          const contenthash = "0xe30101701220" + cid;
+          // Build the contenthash for IPFS (EIP-1577)
+          const contenthash = "0xe30101701220" + cid;  
 
-          console.log("Setting new contenthash:", contenthash);
+          console.log("Setting ENS contenthash:", contenthash);
 
           const tx = await resolver.setContenthash(node, contenthash);
           console.log("TX submitted:", tx.hash);
