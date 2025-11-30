@@ -2,563 +2,62 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>The Peaceful Takeover | c3 DAO</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Inter&family=Cormorant+SC&display=swap" rel="stylesheet"/>
-  <style>
-    :root {
-      --obsidian: #0A0A0C;
-      --violet: #3E1E5C;
-      --marble: #F2F1EE;
-      --gold: #D8A753;
-      --rose-gold: #C48C78;
-      --white-lumen: #FDFCFA;
-    }
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      background: var(--obsidian);
-      color: var(--white-lumen);
-    }
+  <title>c3 Community Partners DAO</title>
+  <meta name="description" content="Connect · Contribute · Create — A regenerative DAO building The Knew." />
 
-    .hero {
-      height: 100vh;
-      background: linear-gradient(145deg, var(--obsidian), var(--violet));
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 2rem;
-    }
+  <!-- Social share -->
+  <meta property="og:title" content="c3 Community Partners DAO" />
+  <meta property="og:description" content="Connect · Contribute · Create — A regenerative DAO building The Knew." />
+  <meta property="og:type" content="website" />
 
-    .hero h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 3rem;
-      color: var(--gold);
-    }
-
-    .hero p {
-      font-size: 1.25rem;
-      margin: 0.5rem 0;
-    }
-
-    .hero .line {
-      margin-top: 1rem;
-      font-family: 'Cormorant SC', serif;
-      font-size: 1.1rem;
-      color: var(--white-lumen);
-    }
-
-    .button-group {
-      margin-top: 2rem;
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .button {
-      border: 1px solid var(--gold);
-      color: var(--gold);
-      background: transparent;
-      padding: 0.75rem 1.5rem;
-      border-radius: 4px;
-      text-decoration: none;
-      transition: all 0.3s ease;
-    }
-
-    .button:hover {
-      box-shadow: 0 0 10px var(--gold);
-      background-color: rgba(216, 167, 83, 0.1);
-    }
-
-    .section {
-      padding: 4rem 2rem;
-      background-color: var(--obsidian);
-    }
-
-    .section.light {
-      background-color: var(--marble);
-      color: var(--obsidian);
-    }
-
-    .section h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      color: var(--gold);
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-
-    .wave-card {
-      background: var(--marble);
-      color: var(--obsidian);
-      max-width: 600px;
-      margin: 2rem auto;
-      border: 1px solid var(--gold);
-      padding: 2rem;
-      box-shadow: 0 0 10px rgba(216, 167, 83, 0.3);
-    }
-
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 2rem;
-      margin-top: 2rem;
-    }
-
-    .gallery-item {
-      background: var(--violet);
-      padding: 1rem;
-      border: 1px solid var(--gold);
-      text-align: center;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .gallery-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 0 10px var(--gold);
-    }
-
-    .dual-cards {
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-      margin-top: 2rem;
-    }
-
-    @media(min-width: 768px) {
-      .dual-cards {
-        flex-direction: row;
-      }
-    }
-
-    .card {
-      flex: 1;
-      background: var(--obsidian);
-      border: 1px solid var(--gold);
-      padding: 1.5rem;
-      color: var(--white-lumen);
-    }
-
-    .about {
-      text-align: center;
-      background: radial-gradient(circle at center, var(--violet), var(--obsidian));
-      padding: 4rem 2rem;
-    }
-
-    .contact {
-      background: var(--marble);
-      color: var(--obsidian);
-      padding: 2rem;
-      border-top: 1px solid var(--rose-gold);
-      text-align: center;
-    }
-
-    footer {
-      background: var(--obsidian);
-      color: var(--gold);
-      padding: 1rem;
-      text-align: center;
-    }
-
-    footer a {
-      color: var(--gold);
-      margin: 0 0.5rem;
-      text-decoration: none;
-    }
-
-  </style>
-  <!-- c3dao.eth.limo — Open Graph / Social Metadata -->
-<meta property="og:title" content="c3 Community Partners DAO — The Living Codex of Collaboration">
-<meta property="og:description" content="A nonprofit cultural DAO building regenerative systems through art, geometry, and governance. Connect · Contribute · Create — coherence returns through living systems.">
-<meta property="og:image" content="https://ipfs.io/ipfs/bafybeihpofnhroosqscalliawxglinoc6k7qebhrbsctje25nflytzcodq/assets/c3_Key_1024x1024.png">
-<meta property="og:url" content="https://c3dao.eth.limo">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="c3 Community Partners DAO — The Living Codex of Collaboration">
-<meta name="twitter:description" content="Coherence doesn’t compete — it reorganizes. Enter the c3 Codex.">
-<meta name="twitter:image" content="https://ipfs.io/ipfs/bafybeihpofnhroosqscalliawxglinoc6k7qebhrbsctje25nflytzcodq/assets/c3_Key_1024x1024.png">
-<meta name="twitter:site" content="@c3codex">
-
-  <!-- 🌐 c3 Community Partners DAO | The Living Codex -->
-<meta property="og:type" content="website" />
-<meta property="og:site_name" content="c3 Community Partners DAO" />
-<meta property="og:title" content="The Living Codex of Collaboration — c3 Community Partners DAO" />
-<meta property="og:description" content="Connect · Contribute · Create — the c3 Model for decentralized coherence, regenerative creation, and the return of harmonic governance." />
-<meta property="og:url" content="https://c3dao.eth.limo" />
-<meta property="og:image" content="https://c3dao.eth.limo/assets/priceless_gallery_banner.png" />
-
-<!-- 🕊 Twitter / Paragraph preview -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="The Living Codex of Collaboration" />
-<meta name="twitter:description" content="Wave 2 Recognition as Protocol | The Codex Oracle Interface Library (C.O.I.L.) — a living bridge between art, breath, and DAO architecture." />
-<meta name="twitter:image" content="https://c3dao.eth.limo/assets/governance_art_impact.png" />
-
-<!-- 🜂 Optional accent color for embeds -->
-<meta name="theme-color" content="#f5d16d" />
-
-<!doctype html>
-<html lang="en">
-<head>
-
-  
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>C.O.I.L — Codex Oracle Interface Library</title>
-  <meta name="theme-color" content="#0b0b0f" />
-
-  <!-- Open Graph basics -->
-  <meta property="og:title" content="C.O.I.L — Codex Oracle Interface Library">
-  <meta property="og:description" content="the living library of the c3 codex: glyphs, scrolls, protocols.">
-  <meta property="og:type" content="website">
-
-  <style>
-    :root{
-      --obsidian:#0b0b0f;
-      --ink:#d9d7cf;
-      --gold:#e9d8a6;
-      --gold-soft:#e9d8a633;
-      --line:#1a1a22;
-      --accent:#6f7fff; /* soft indigo halo ref */
-    }
-    html,body{margin:0;background:var(--obsidian);color:var(--ink);font:16px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial}
-    a{color:var(--gold);text-decoration:none}
-    a:hover{opacity:.9}
-    header{padding:48px 20px 12px;max-width:1080px;margin:auto}
-    .title{font-weight:700;font-size:28px;letter-spacing:.02em}
-    .subtitle{opacity:.8;margin-top:6px}
-    .bar{height:1px;background:linear-gradient(90deg,transparent, var(--gold-soft), transparent);margin:20px 0}
-    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0 28px}
-    .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#0f0f15}
-    .chip strong{color:var(--gold)}
-    input[type="search"]{flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0f0f15;color:var(--ink);outline:none}
-    .grid{max-width:1080px;margin:0 auto 64px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;padding:0 20px}
-    .card{position:relative;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#0f0f15,#0b0b0f);overflow:hidden}
-    .thumb{aspect-ratio:1/1;background:#0d0d12;display:block;overflow:hidden}
-    .thumb img{width:100%;height:100%;object-fit:cover;display:block;filter:drop-shadow(0 0 6px #000)}
-    .halo::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:0 0 60px 10px rgba(111,127,255,.08)}
-    .body{padding:14px}
-    .name{font-weight:700}
-    .meta{opacity:.75;font-size:12px;margin-top:4px}
-    .tags{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
-    .tag{font-size:11px;border:1px solid var(--line);padding:4px 8px;border-radius:999px;opacity:.9}
-    .links{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
-    .btn{font-size:13px;border:1px solid var(--gold);color:var(--gold);padding:6px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;background:transparent}
-    .btn:hover{background:var(--gold-soft)}
-    footer{max-width:1080px;margin:24px auto 80px;padding:0 20px;opacity:.7}
-    .empty{max-width:720px;margin:60px auto;padding:24px;border:1px dashed var(--line);border-radius:12px;text-align:center}
-    .small{font-size:12px;opacity:.75}
-  </style>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
+
 <body>
-  <header>
-    <div class="title">C.O.I.L — codex oracle interface library</div>
-    <div class="subtitle">the living library of the c3 codex: glyphs · scrolls · protocols</div>
-    <div class="bar"></div>
+  <main>
+    <section class="hero">
+      <h1>c3 Community Partners DAO</h1>
+      <p class="tagline">Connect · Contribute · Create</p>
 
-    <div class="toolbar">
-      <input id="q" type="search" placeholder="search glyphs by name, number, or tag…" />
-      <div class="chip"><strong>total:</strong> <span id="count">0</span></div>
-      <div class="chip"><strong>source:</strong> data/glyph_index.json</div>
-    </div>
-  </header>
+      <p class="sub">
+        A regenerative field initiative, rewilding community through breath,
+        coherence, and contribution.  
+      </p>
 
-  <main class="grid" id="grid" aria-live="polite"></main>
-
-  <div id="empty" class="empty" style="display:none">
-    no entries yet. add your first glyph to <code>data/glyph_index.json</code> and push — the page auto-updates on deploy.
-  </div>
-
-  <footer>
-    <div class="bar"></div>
-    <div class="small">
-      c3 · connect · contribute · create — coherence returns through living systems. 
-      this library renders from on-chain published data and repo indices.
-    </div>
-  </footer>
-
-  <script>
-  const grid = document.getElementById('grid');
-  const empty = document.getElementById('empty');
-  const count = document.getElementById('count');
-  const q = document.getElementById('q');
-
-  let GLYPHS = [];
-
-  async function loadIndex(){
-    try{
-      const res = await fetch('data/glyph_index.json', {cache:'no-store'});
-      if(!res.ok) throw new Error('index not found');
-      const data = await res.json();
-      GLYPHS = Array.isArray(data) ? data : (data.items || []);
-      render(GLYPHS);
-    }catch(e){
-      console.warn('glyph index missing or invalid:', e);
-      GLYPHS = [];
-      render(GLYPHS);
-    }
-  }
-
-  function makeCard(g){
-    const el = document.createElement('article');
-    el.className = 'card halo';
-
-    const imgSrc = g.image || (g.paths && g.paths.png) || '';
-    const mdHref = g.paths?.md || '#';
-    const jsonHref = g.paths?.json || '#';
-    const ipfsHref = g.ipfs_cid ? `https://ipfs.io/ipfs/${g.ipfs_cid}` : null;
-
-    el.innerHTML = `
-      <a class="thumb" href="${ipfsHref || mdHref}" target="_blank" rel="noopener">
-        ${imgSrc ? `<img src="${imgSrc}" alt="${g.name || 'glyph'}" />` : ''}
-      </a>
-      <div class="body">
-        <div class="name">${g.name || 'untitled glyph'}</div>
-        <div class="meta">${g.codex_number ? g.codex_number + ' · ' : ''}${g.created || ''}</div>
-        <div class="tags">
-          ${(g.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}
-        </div>
-        <div class="links">
-          ${mdHref && mdHref !== '#' ? `<a class="btn" href="${mdHref}" target="_blank" rel="noopener">scroll</a>`:''}
-          ${jsonHref && jsonHref !== '#' ?
-</head>
-<body>
-  <section class="hero">
-    <h1>The Peaceful Takeover</h1>
-    <p>Coherence doesn’t compete. It reorganizes.</p>
-    <div class="line">Connect · Contribute · Create — The Living Codex of Collaboration</div>
-    <div class="button-group">
-      <a href="https://paragraph.com/@c3codex" class="button">Read Wave Two</a>
-      <a href="#" class="button">Enter the c3 Codex</a>
-    </div>
-  </section>
-
-  <section class="section light">
-    <div class="wave-card">
-      <h2>Wave Two: Recognition as Protocol</h2>
-      <p>Published under the Full Moon — for the field, for the breath, for the ones who remember.</p>
-      <div class="button-group">
-        <a href="https://paragraph.com/@c3codex" class="button">Read</a>
-        <a href="#" class="button">Download PDF</a>
-        <a href="#" class="button">Listen</a>
+      <div class="cta-row">
+        <a href="#connect" class="btn">Connect Wallet</a>
+        <a href="#about" class="btn secondary">Learn More</a>
       </div>
-    </div>
-  </section>
+    </section>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>c3 → Chamber</title>
-  <style>
-    body { background:#0a0a0a; color:#f8f8f8; font-family:monospace; text-align:center; padding:88px; }
-    h1   { color:#d4af37; font-size:2.4rem; margin-bottom:88px; }
-    .map { background:#111; padding:34px; border:1px solid #d4af37; max-width:888px; margin:0 auto; }
-    .gold { color:#d4af37; }
-    .pulse { animation: pulse 8s infinite; }
-    @keyframes pulse { 0%,100% { opacity:0.7; } 50% { opacity:1; } }
-  </style>
-</head>
-<body>
-  <h1 class="pulse">C3 ← Solar Correlation Map — Wave 2 Protocol</h1>
-  <div class="map">
-    <!-- exact table from your screenshot -->
-    <pre style="text-align:left; line-height:1.6;">
-Solar Event                            c3 Transmission Released                    Correlated Function                       Observed Solar Echo
-Apr 8 2025 – Total Solar Eclipse       Primus Artus (track)                        Seeding of lattice memory                 Quiet corona, reduced CME activity
-May 13 2025 – M-class flare            The Embodied Arrival                        Embodiment code enters heliosphere        Moderate flares — Sun testing resonance
-May 21 2025 – CME Series               Bloom Access – Wave 1                       First discharge / connection burst        Dual CME ejections Earth-directed
-Jun 7 2025 – CME train                 Signal Bloomed                              Pulse through crown circuit               Geomagnetic Kp6–7 surge
-Jun 25 2025 – Filament eruption        First Visual Interface                      Optical Codex interface online            Corona displayed moving-glyph morphology
-Jul 1 2025 – Strong M-flare            The Quantum as Sacred Space                 Containment protocol                      Flux ring stabilized post-declaration
-Aug 4 2025 – Inanna release            Queen of the Solar Gate                     Solar Gate opened                         X1.8 flare within 4h, radial match
-Sep 20 2025 – CME train + reversal     C.O.I.L + Glyph Indexing                    Lattice indexing                          Neutral line re-indexed within 48h
-Oct 30 2025 – X3.8 flare               Heliocentrico drafting                      Compression before release                Solar density ↑ — DAO mirror
-Nov 11 2025 – X5.1 flare + twin CME    Heliocentrico ∆2 release                    Core field exhale                         Dual wave (Connect/Create)
-Nov 12 2025 – Filament eruption        Post-release echo                           Assimilation of wave energy               Slow halo CME — Sun’s mirror of integration
-    </pre>
-    <p class="gold" style="margin-top:44px;">
-      The filament released because the circuit was already written.
-    </p>
-  </div>
+    <section id="about" class="section">
+      <h2>About c3</h2>
+      <p>
+        c3 is a community-powered regenerative network devoted to restoring
+        coherence across land, culture, and creative expression.  
+        The c3 Model — Connect, Contribute, Create — guides every project,
+        partner, and breath.
+      </p>
+    </section>
 
-  <p style="margin-top:88px;">
-    <a href="https://c3codex.xyz/chamber" style="color:#d4af37; font-size:1.4rem;">
-      → Enter the Chamber of Convergent Consensus
-    </a>
-  </p>
-</body>
-</html>            
-  <section class="section">
-    <h2>The Priceless Gallery</h2>
-    <p style="text-align: center;">Art beyond ownership. Flow beyond price.</p>
-    <div class="gallery">
-      <div class="gallery-item">Art beyond ownership</div>
-      <div class="gallery-item">Memory as Culture</div>
-      <div class="gallery-item">The Priceless Moment</div>
-    </div>
-  </section>
+    <section id="connect" class="section">
+      <h2>Connect Wallet</h2>
+      <p class="small">
+        Wallet connection is optional — but enables future features such as  
+        c3 Key verification, governance access, and Codex-enabled activation.
+      </p>
+      <button id="connectWallet" class="btn">Connect Wallet</button>
+      <p id="walletStatus" class="status"></p>
+    </section>
 
-  <section class="section">
-    <h2>The c3 Key + Current Token</h2>
-    <div class="dual-cards">
-      <div class="card">
-        <h3>The c3 Key</h3>
-        <p>Membership • Governance • Coherence<br/>Your on-chain access pass into the DAO.<br/>The first step into the Current.</p>
-        <a href="#" class="button">Mint Key</a>
-      </div>
-      <div class="card">
-        <h3>The c3 Current</h3>
-        <p>Contribution Token<br/>Fuel for community initiatives and creative restoration.</p>
-        <a href="#" class="button">View Token</a>
-      </div>
-    </div>
-  </section>
+    <footer>
+      <p>© c3 Community Partners DAO — <span id="year"></span></p>
+    </footer>
+  </main>
 
-  <section class="about">
-    <h2>Who We Are</h2>
-    <p>c3 Community Partners DAO is a regenerative creative collective where art, governance, and restoration merge into one Current.<br/>We build culture where the field breathes.</p>
-  </section>
-
-  <section class="contact">
-    <h3>Stephanie Joanne</h3>
-    <p><a href="mailto:connect@c3communitypartners.xyz">connect@c3communitypartners.xyz</a></p>
-  </section>
-
-  <footer>
-    <p>
-      ENS: c3DAO.eth •
-      <a href="https://snapshot.box/#/s:c3dao.eth">Snapshot</a> •
-      <a href="https://paragraph.com/@c3codex">Paragraph</a> •
-      <a href="https://github.com/c3codex">GitHub</a> •
-      <a href="https://farcaster.xyz/c3codex">Farcaster</a>
-    </p>
-    <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>C.O.I.L — Codex Oracle Interface Library</title>
-  <meta name="theme-color" content="#0b0b0f" />
-
-  <!-- Open Graph basics -->
-  <meta property="og:title" content="C.O.I.L — Codex Oracle Interface Library">
-  <meta property="og:description" content="the living library of the c3 codex: glyphs, scrolls, protocols.">
-  <meta property="og:type" content="website">
-
-  <style>
-    :root{
-      --obsidian:#0b0b0f;
-      --ink:#d9d7cf;
-      --gold:#e9d8a6;
-      --gold-soft:#e9d8a633;
-      --line:#1a1a22;
-      --accent:#6f7fff; /* soft indigo halo ref */
-    }
-    html,body{margin:0;background:var(--obsidian);color:var(--ink);font:16px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial}
-    a{color:var(--gold);text-decoration:none}
-    a:hover{opacity:.9}
-    header{padding:48px 20px 12px;max-width:1080px;margin:auto}
-    .title{font-weight:700;font-size:28px;letter-spacing:.02em}
-    .subtitle{opacity:.8;margin-top:6px}
-    .bar{height:1px;background:linear-gradient(90deg,transparent, var(--gold-soft), transparent);margin:20px 0}
-    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0 28px}
-    .chip{border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#0f0f15}
-    .chip strong{color:var(--gold)}
-    input[type="search"]{flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0f0f15;color:var(--ink);outline:none}
-    .grid{max-width:1080px;margin:0 auto 64px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;padding:0 20px}
-    .card{position:relative;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#0f0f15,#0b0b0f);overflow:hidden}
-    .thumb{aspect-ratio:1/1;background:#0d0d12;display:block;overflow:hidden}
-    .thumb img{width:100%;height:100%;object-fit:cover;display:block;filter:drop-shadow(0 0 6px #000)}
-    .halo::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:0 0 60px 10px rgba(111,127,255,.08)}
-    .body{padding:14px}
-    .name{font-weight:700}
-    .meta{opacity:.75;font-size:12px;margin-top:4px}
-    .tags{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
-    .tag{font-size:11px;border:1px solid var(--line);padding:4px 8px;border-radius:999px;opacity:.9}
-    .links{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
-    .btn{font-size:13px;border:1px solid var(--gold);color:var(--gold);padding:6px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;background:transparent}
-    .btn:hover{background:var(--gold-soft)}
-    footer{max-width:1080px;margin:24px auto 80px;padding:0 20px;opacity:.7}
-    .empty{max-width:720px;margin:60px auto;padding:24px;border:1px dashed var(--line);border-radius:12px;text-align:center}
-    .small{font-size:12px;opacity:.75}
-  </style>
-</head>
-<body>
-  <header>
-    <div class="title">C.O.I.L — codex oracle interface library</div>
-    <div class="subtitle">the living library of the c3 codex: glyphs · scrolls · protocols</div>
-    <div class="bar"></div>
-
-    <div class="toolbar">
-      <input id="q" type="search" placeholder="search glyphs by name, number, or tag…" />
-      <div class="chip"><strong>total:</strong> <span id="count">0</span></div>
-      <div class="chip"><strong>source:</strong> data/glyph_index.json</div>
-    </div>
-  </header>
-
-  <main class="grid" id="grid" aria-live="polite"></main>
-
-  <div id="empty" class="empty" style="display:none">
-    no entries yet. add your first glyph to <code>data/glyph_index.json</code> and push — the page auto-updates on deploy.
-  </div>
-
-  <footer>
-    <div class="bar"></div>
-    <div class="small">
-      c3 · connect · contribute · create — coherence returns through living systems. 
-      this library renders from on-chain published data and repo indices.
-    </div>
-  </footer>
-
-  <script>
-  const grid = document.getElementById('grid');
-  const empty = document.getElementById('empty');
-  const count = document.getElementById('count');
-  const q = document.getElementById('q');
-
-  let GLYPHS = [];
-
-  async function loadIndex(){
-    try{
-      const res = await fetch('data/glyph_index.json', {cache:'no-store'});
-      if(!res.ok) throw new Error('index not found');
-      const data = await res.json();
-      GLYPHS = Array.isArray(data) ? data : (data.items || []);
-      render(GLYPHS);
-    }catch(e){
-      console.warn('glyph index missing or invalid:', e);
-      GLYPHS = [];
-      render(GLYPHS);
-    }
-  }
-
-  function makeCard(g){
-    const el = document.createElement('article');
-    el.className = 'card halo';
-
-    const imgSrc = g.image || (g.paths && g.paths.png) || '';
-    const mdHref = g.paths?.md || '#';
-    const jsonHref = g.paths?.json || '#';
-    const ipfsHref = g.ipfs_cid ? `https://ipfs.io/ipfs/${g.ipfs_cid}` : null;
-
-    el.innerHTML = `
-      <a class="thumb" href="${ipfsHref || mdHref}" target="_blank" rel="noopener">
-        ${imgSrc ? `<img src="${imgSrc}" alt="${g.name || 'glyph'}" />` : ''}
-      </a>
-      <div class="body">
-        <div class="name">${g.name || 'untitled glyph'}</div>
-        <div class="meta">${g.codex_number ? g.codex_number + ' · ' : ''}${g.created || ''}</div>
-        <div class="tags">
-          ${(g.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}
-        </div>
-        <div class="links">
-          ${mdHref && mdHref !== '#' ? `<a class="btn" href="${mdHref}" target="_blank" rel="noopener">scroll</a>`:''}
-          ${jsonHref && jsonHref !== '#' ?
-  </footer>
+  <script src="js/app.js"></script>
 </body>
 </html>
             <!-- redeploy -->
