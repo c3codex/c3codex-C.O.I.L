@@ -2,24 +2,32 @@ name: Deploy to IPFS and Update ENS (Ethereum)
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+
+      # 1. Checkout
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      # 2. Setup Node
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: 20
 
-      - name: Install dependencies
-        run: npm install ethers dotenv
+      # 3. Install ENS dependencies
+      - name: Install ENS dependencies
+        run: |
+          npm init -y
+          npm install ethers viem dotenv
 
+      # 4. Upload full site folder to Pinata
       - name: Upload folder to Pinata (IPFS)
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
@@ -29,16 +37,17 @@ jobs:
           RESPONSE=$(curl -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
             -H "Authorization: Bearer $PINATA_JWT" \
             -H "pinataOptions: {\"wrapWithDirectory\": true}" \
-            -F file=@index.html \
-            -F file=@css/style.css \
-            -F file=@js/app.js \
-            -F file=@assets/logo.png)
+            -F "file=@index.html" \
+            -F "file=@css" \
+            -F "file=@js" \
+            -F "file=@assets" )
 
           echo "Pinata response: $RESPONSE"
-          CID=$(echo "$RESPONSE" | jq -r '.IpfsHash')
 
+          CID=$(echo "$RESPONSE" | jq -r '.IpfsHash')
           echo "CID=$CID" >> $GITHUB_ENV
 
+      # 5. Update ENS contenthash on Ethereum mainnet
       - name: Update ENS contenthash on Ethereum
         env:
           ETH_PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
@@ -47,33 +56,34 @@ jobs:
         run: |
           echo "Updating ENS contenthash..."
 
-          cat << 'EOF' > update-ens.js
-            import { ethers } from "ethers";
+          cat << 'EOF' > update-ens.mjs
+          import { ethers } from "ethers";
+          import { namehash } from "viem/utils";
 
-            const cid = process.env.CID;
-            const provider = new ethers.InfuraProvider("mainnet", process.env.INFURA_KEY);
-            const wallet = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
+          const cid = process.env.CID;
 
-            // Public Resolver ABI
-            const ABI = [
-              "function setContenthash(bytes32 node, bytes contenthash) external"
-            ];
+          const provider = new ethers.JsonRpcProvider(
+            `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`
+          );
 
-            // c3dao.eth namehash
-            const namehash = ethers.namehash("c3dao.eth");
+          const wallet = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
 
-            // Format as IPFS contenthash: 0xe3 + multicodec + CID
-            const contentHash = "0xe3010170" + 
-              Buffer.from(cid, "base58btc").toString("hex");
+          const resolverAddress = "0x4976fb03c32e5b8cfe2b6ccb31c09ba78ebaba41"; // Public Resolver
+          const resolverABI = [
+            "function setContenthash(bytes32 node, bytes hash) public"
+          ];
+          const resolver = new ethers.Contract(resolverAddress, resolverABI, wallet);
 
-            const resolver = new ethers.Contract(
-              "0x4976fb03c32e5b8cfe2b6ccb31c09ba78e8baba41", // PublicResolver
-              ABI,
-              wallet
-            );
+          const node = namehash("c3dao.eth");
+          const contenthash = "0xe30101701220" + cid; // IPFS contenthash encoding
 
-            await resolver.setContenthash(namehash, contentHash);
-            console.log("Updated contenthash to:", contentHash);
+          console.log("Setting new contenthash:", contenthash);
+
+          const tx = await resolver.setContenthash(node, contenthash);
+          console.log("TX submitted:", tx.hash);
+
+          await tx.wait();
+          console.log("ENS contenthash updated.");
           EOF
 
-          node update-ens.js
+          node update-ens.mjs
