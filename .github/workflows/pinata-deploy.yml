@@ -2,64 +2,78 @@ name: Deploy to IPFS and Update ENS (Ethereum)
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repo
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2. Setup Node
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: '20'
 
-      # 3. Install dependencies
-      - name: Install ENS dependencies
-        run: |
-          npm install viem ethers @ensdomains/ensjs dotenv
+      - name: Install dependencies
+        run: npm install ethers dotenv
 
-      # 4. Upload full site to Pinata
-      - name: Upload full site to Pinata (IPFS)
+      - name: Upload folder to Pinata (IPFS)
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
-          zip -r site_bundle.zip .
+          echo "Uploading site folder to Pinata..."
+
           RESPONSE=$(curl -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
             -H "Authorization: Bearer $PINATA_JWT" \
-            -H "Accept: application/json" \
-            -F "file=@site_bundle.zip")
-          CID=$(echo $RESPONSE | jq -r '.IpfsHash')
-          echo "CID=$CID" >> $GITHUB_ENV
-
-      # 5. Update ENS Contenthash
-      - name: Upload full site to Pinata (IPFS)
-        env:
-          PINATA_JWT: ${{ secrets.PINATA_JWT }}
-        run: |
-          echo "Zipping site directory..."
-          zip -r site_bundle.zip .
-
-          echo "Uploading site bundle to Pinata..."
-          RESPONSE=$(curl -s -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
-            -H "Authorization: Bearer $PINATA_JWT" \
-            -H "Accept: application/json" \
-            -F "file=@site_bundle.zip")
+            -H "pinataOptions: {\"wrapWithDirectory\": true}" \
+            -F file=@index.html \
+            -F file=@css/style.css \
+            -F file=@js/app.js \
+            -F file=@assets/logo.png)
 
           echo "Pinata response: $RESPONSE"
-
           CID=$(echo "$RESPONSE" | jq -r '.IpfsHash')
 
-          if [ -z "$CID" ] || [ "$CID" = "null" ]; then
-            echo "❌ ERROR: CID could not be extracted."
-            exit 1
-          fi
-
           echo "CID=$CID" >> $GITHUB_ENV
-          echo "Extracted CID: $CID"
+
+      - name: Update ENS contenthash on Ethereum
+        env:
+          ETH_PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
+          INFURA_KEY: ${{ secrets.INFURA_MAINNET_KEY }}
+          CID: ${{ env.CID }}
+        run: |
+          echo "Updating ENS contenthash..."
+
+          cat << 'EOF' > update-ens.js
+            import { ethers } from "ethers";
+
+            const cid = process.env.CID;
+            const provider = new ethers.InfuraProvider("mainnet", process.env.INFURA_KEY);
+            const wallet = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
+
+            // Public Resolver ABI
+            const ABI = [
+              "function setContenthash(bytes32 node, bytes contenthash) external"
+            ];
+
+            // c3dao.eth namehash
+            const namehash = ethers.namehash("c3dao.eth");
+
+            // Format as IPFS contenthash: 0xe3 + multicodec + CID
+            const contentHash = "0xe3010170" + 
+              Buffer.from(cid, "base58btc").toString("hex");
+
+            const resolver = new ethers.Contract(
+              "0x4976fb03c32e5b8cfe2b6ccb31c09ba78e8baba41", // PublicResolver
+              ABI,
+              wallet
+            );
+
+            await resolver.setContenthash(namehash, contentHash);
+            console.log("Updated contenthash to:", contentHash);
+          EOF
+
+          node update-ens.js
