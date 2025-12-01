@@ -1,76 +1,66 @@
-import { createPublicClient, http, namehash, encodeAbiParameters } from "viem";
+// scripts/update-ens.mjs
+
+import { createWalletClient, http, formatBytes32String } from "viem";
 import { mainnet } from "viem/chains";
-import { privateKeyToAccount } from "viem/accounts";
-import contentHash from "@ensdomains/content-hash";
+import * as contentHash from "@ensdomains/content-hash";
 
-// ------------------------------
-// ENV
-// ------------------------------
-const cid = process.env.NEW_IPFS_CID;
-const pk = process.env.ETH_PRIVATE_KEY;
-const infura = process.env.INFURA_ID;
+// ENV VARS
+const CID = process.env.NEW_IPFS_CID;
+const PRIVATE_KEY = process.env.ETH_PRIVATE_KEY;
+const INFURA_ID = process.env.INFURA_ID;
 
-if (!cid) throw new Error("Missing NEW_IPFS_CID");
-if (!pk) throw new Error("Missing ETH_PRIVATE_KEY");
-if (!infura) throw new Error("Missing INFURA_ID");
+if (!CID) throw new Error("❌ Missing NEW_IPFS_CID");
+if (!PRIVATE_KEY) throw new Error("❌ Missing ETH_PRIVATE_KEY");
+if (!INFURA_ID) throw new Error("❌ Missing INFURA_ID");
 
-// ------------------------------
-// Encode contenthash (IPFS → ENS format)
-// ------------------------------
-const encoded = "0x" + contentHash.encode("ipfs-ns", cid);
+// ENS NAME YOU ARE UPDATING
+const ENS_NAME = "c3dao.eth";
 
-console.log("Encoded contenthash:", encoded);
+// Build IPFS contenthash
+const encoded = "0x" + contentHash.encode("ipfs-ns", CID);
 
-// ------------------------------
-// Connect wallet
-// ------------------------------
-const account = privateKeyToAccount(`0x${pk}`);
+console.log("✨ Updating ENS contenthash for", ENS_NAME);
+console.log("→ CID:", CID);
+console.log("→ Encoded contenthash:", encoded);
 
-const client = createPublicClient({
+// Wallet client
+const client = createWalletClient({
   chain: mainnet,
-  transport: http(`https://mainnet.infura.io/v3/${infura}`),
+  transport: http(`https://mainnet.infura.io/v3/${INFURA_ID}`),
+  account: PRIVATE_KEY
 });
 
-// ------------------------------
-// ENS registry contract
-// ------------------------------
-const ENS_REGISTRY = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
+// ENS Registry contract
+const ENS_REGISTRY = {
+  address: "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+  abi: [
+    {
+      constant: false,
+      inputs: [
+        { name: "node", type: "bytes32" },
+        { name: "hash", type: "bytes" }
+      ],
+      name: "setContenthash",
+      type: "function"
+    }
+  ]
+};
 
-const registryAbi = [
-  {
-    name: "setContenthash",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "node", type: "bytes32" },
-      { name: "hash", type: "bytes" },
-    ],
-    outputs: [],
-  },
-];
+// Compute namehash manually (viem style)
+import { namehash } from "viem/ens";
 
-// ------------------------------
-// Compute namehash
-// ------------------------------
-const node = namehash("c3dao.eth");
+const node = namehash(ENS_NAME);
 
-// ------------------------------
-// Send transaction
-// ------------------------------
-console.log("Sending transaction…");
-
-const hash = await client.writeContract({
-  address: ENS_REGISTRY,
-  abi: registryAbi,
+// Send the TX
+const txHash = await client.writeContract({
+  ...ENS_REGISTRY,
   functionName: "setContenthash",
-  args: [node, encoded],
-  account,
+  args: [node, encoded]
 });
 
-console.log("TX sent:", hash);
+console.log("⏳ TX submitted:", txHash);
 
-console.log("Waiting for confirmation…");
+// Wait for confirmation
+await client.waitForTransactionReceipt({ hash: txHash });
 
-await client.waitForTransactionReceipt({ hash });
-
-console.log("ENS contenthash updated successfully.");
+console.log("✅ ENS contenthash updated successfully!");
