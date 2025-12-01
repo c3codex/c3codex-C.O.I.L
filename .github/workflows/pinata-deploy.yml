@@ -10,28 +10,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # -----------------------------
+      # CHECK OUT REPO
+      # -----------------------------
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      # -----------------------------
+      # NODE
+      # -----------------------------
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install ENS dependencies
+      # -----------------------------
+      # INSTALL DEPS FOR UPDATE SCRIPT
+      # -----------------------------
+      - name: Install ENS updater dependencies
         run: |
           npm init -y
-          npm install ethers multiformats
+          npm install viem @ensdomains/content-hash axios
 
-      # Upload folder to IPFS
+      # -----------------------------
+      # UPLOAD TO PINATA (DIR UPLOAD)
+      # -----------------------------
       - name: Upload folder to Pinata (IPFS)
         id: upload
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
-          echo "Uploading site to Pinata..."
-
-          RESPONSE=$(curl -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
+          echo "Uploading site folder to Pinata..."
+          RESPONSE=$(curl -s -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
             -H "Authorization: Bearer $PINATA_JWT" \
             -H "pinataOptions: {\"wrapWithDirectory\": true}" \
             -F "file=@./index.html" \
@@ -39,14 +49,24 @@ jobs:
             -F "file=@./js" \
             -F "file=@./assets")
 
-          echo "Response: $RESPONSE"
+          echo "Pinata response: $RESPONSE"
           CID=$(echo "$RESPONSE" | jq -r '.IpfsHash')
           echo "cid=$CID" >> $GITHUB_OUTPUT
 
-      # ENS Update
+      # -----------------------------
+      # UPDATE ENS CONTENTHASH
+      # -----------------------------
       - name: Update ENS contenthash on Ethereum
-        run: node scripts/update-ens.mjs
         env:
           NEW_IPFS_CID: ${{ steps.upload.outputs.cid }}
           ETH_PRIVATE_KEY: ${{ secrets.ENS_WALLET_KEY }}
           INFURA_ID: ${{ secrets.INFURA_ID }}
+        run: |
+          echo "Running ENS updater..."
+          node scripts/update-ens.mjs
+
+      # -----------------------------
+      # DONE
+      # -----------------------------
+      - name: Job complete
+        run: echo "Deployment + ENS update finished."
