@@ -21,16 +21,17 @@ jobs:
       - name: Install dependencies
         run: |
           npm init -y
-          npm install ethers content-hash axios
+          npm install ethers @ensdomains/content-hash axios
 
-      # ---------------------------
-      #  Upload root folder to IPFS
-      # ---------------------------
+      # --------------------------------
+      # Upload folder to IPFS via Pinata
+      # --------------------------------
       - name: Upload folder to Pinata (IPFS)
+        id: upload
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
-          echo "Uploading root folder to Pinata..."
+          echo "Uploading site to Pinata..."
 
           RESPONSE=$(curl -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
             -H "Authorization: Bearer $PINATA_JWT" \
@@ -38,49 +39,18 @@ jobs:
             -F "file=@./index.html" \
             -F "file=@./css" \
             -F "file=@./js" \
-            -F "file=@./assets" )
+            -F "file=@./assets")
 
           echo "Pinata response: $RESPONSE"
+          CID=$(echo "$RESPONSE" | jq -r '.IpfsHash')
+          echo "cid=$CID" >> $GITHUB_OUTPUT
 
-          CID=$(echo $RESPONSE | jq -r '.IpfsHash')
-
-          echo "CID=$CID" >> $GITHUB_ENV
-
-      # ---------------------------
-      #  Update ENS Contenthash
-      # ---------------------------
+      # --------------------------------
+      # Update ENS contenthash
+      # --------------------------------
       - name: Update ENS contenthash on Ethereum
         run: node scripts/update-ens.mjs
         env:
-        NEW_IPFS_CID: ${{ steps.upload.outputs.cid }}
-        ETH_PRIVATE_KEY: ${{ secrets.ENS_WALLET_KEY }}
-        INFURA_ID: ${{ secrets.INFURA_ID }}
-        run: |
-          echo "Updating ENS contenthash..."
-
-          cat << 'EOF' > update-ens.mjs
-          import { ethers } from "ethers";
-          import * as contentHash from "content-hash";
-
-          const cid = process.env.CID;
-          const provider = new ethers.InfuraProvider("mainnet", process.env.INFURA_KEY);
-          const wallet = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
-
-          const resolverAddress = "0x4976fb03c32e5b8cfe2b6ccb31c09ba78ebaba41"; // ENS Public Resolver
-          const abi = [
-            "function setContenthash(bytes32 node, bytes calldata hash) external"
-          ];
-
-          const encoded = "0x" + contentHash.encode("ipfs-ns", cid);
-          const node = ethers.namehash("c3dao.eth");
-
-          console.log("Updating ENS to:", cid);
-
-          const resolver = new ethers.Contract(resolverAddress, abi, wallet);
-          const tx = await resolver.setContenthash(node, encoded);
-          await tx.wait();
-
-          console.log("ENS Updated:", tx.hash);
-          EOF
-
-          node update-ens.mjs
+          NEW_IPFS_CID: ${{ steps.upload.outputs.cid }}
+          ETH_PRIVATE_KEY: ${{ secrets.ENS_WALLET_KEY }}
+          INFURA_ID: ${{ secrets.INFURA_ID }}
