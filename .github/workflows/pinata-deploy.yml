@@ -18,14 +18,12 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
+      - name: Install ENS dependencies
         run: |
           npm init -y
-          npm install ethers @ensdomains/content-hash axios
+          npm install ethers multiformats
 
-      # --------------------------------
-      # Upload folder to IPFS via Pinata
-      # --------------------------------
+      # Upload folder to IPFS
       - name: Upload folder to Pinata (IPFS)
         id: upload
         env:
@@ -41,13 +39,11 @@ jobs:
             -F "file=@./js" \
             -F "file=@./assets")
 
-          echo "Pinata response: $RESPONSE"
+          echo "Response: $RESPONSE"
           CID=$(echo "$RESPONSE" | jq -r '.IpfsHash')
           echo "cid=$CID" >> $GITHUB_OUTPUT
 
-      # --------------------------------
-      # Update ENS contenthash
-      # --------------------------------
+      # ENS Update
       - name: Update ENS contenthash on Ethereum
         run: node scripts/update-ens.mjs
         env:
