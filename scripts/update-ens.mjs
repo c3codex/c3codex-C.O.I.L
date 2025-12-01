@@ -1,44 +1,71 @@
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-
 import { ethers } from "ethers";
-const contentHash = require("@ensdomains/content-hash");
+import { CID } from "multiformats/cid";
+import * as digest from "multiformats/hashes/digest";
+import * as pb from "multiformats/codecs/dag-pb";
 
-// ---- CONFIG ----
-const ENS_NAME = "c3dao.eth";
-const NEW_IPFS_CID = process.env.NEW_IPFS_CID;
-const PRIVATE_KEY = process.env.ETH_PRIVATE_KEY;
-const INFURA_ID = process.env.INFURA_ID;
+// -----------------------------------------
+// 1) Read environment variables
+// -----------------------------------------
+const cidv0 = process.env.NEW_IPFS_CID;
+const privateKey = process.env.ETH_PRIVATE_KEY;
+const infuraId = process.env.INFURA_ID;
 
-if (!NEW_IPFS_CID) throw new Error("Missing NEW_IPFS_CID");
-if (!PRIVATE_KEY) throw new Error("Missing ETH_PRIVATE_KEY");
+if (!cidv0) throw new Error("Missing NEW_IPFS_CID");
+if (!privateKey) throw new Error("Missing ETH_PRIVATE_KEY");
+if (!infuraId) throw new Error("Missing INFURA_ID");
 
-// ---- CONNECT PROVIDER ----
+// -----------------------------------------
+// 2) Convert CIDv0 → CIDv1 (required by ENS)
+// -----------------------------------------
+const cid = CID.parse(cidv0);
+const cid1 = cid.toV1();
+
+// Encode contenthash per ENS standard
+const contenthashBytes = pb.encode({
+  Data: new Uint8Array(),
+  Links: []
+});
+
+const digestBytes = digest.create(0x12, contenthashBytes);
+
+// Final hex encoding for ENS
+const encodedContenthash =
+  "0x" + digestBytes.bytes.slice(0, 34).toString("hex");
+
+// -----------------------------------------
+// 3) Connect wallet + ENS registry
+// -----------------------------------------
 const provider = new ethers.JsonRpcProvider(
-  `https://mainnet.infura.io/v3/${INFURA_ID}`
+  `https://mainnet.infura.io/v3/${infuraId}`
 );
 
-// ---- SIGNER ----
-const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+const wallet = new ethers.Wallet(privateKey, provider);
 
-// ---- ENS REGISTRY ----
-const registryAddress = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
-const registryABI = [
-  "function setContenthash(bytes32 node, bytes hash) external",
+const ENS_REGISTRY = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
+const registryAbi = [
+  "function setContenthash(bytes32 node, bytes hash) external"
 ];
 
-const registry = new ethers.Contract(registryAddress, registryABI, wallet);
+const registry = new ethers.Contract(
+  ENS_REGISTRY,
+  registryAbi,
+  wallet
+);
 
-// ---- PREP ENCODED CONTENTHASH ----
-const encoded = "0x" + contentHash.encode("ipfs-ns", NEW_IPFS_CID);
-const node = ethers.namehash(ENS_NAME);
+// -----------------------------------------
+// 4) Compute namehash(c3dao.eth)
+// -----------------------------------------
+const node = ethers.namehash("c3dao.eth");
 
-// ---- UPDATE ENS ----
-console.log("Updating ENS contenthash for:", ENS_NAME);
-console.log("CID:", NEW_IPFS_CID);
+// -----------------------------------------
+// 5) Send transaction
+// -----------------------------------------
+console.log("Writing contenthash to ENS:", encodedContenthash);
 
-const tx = await registry.setContenthash(node, encoded);
-console.log("Transaction sent:", tx.hash);
+const tx = await registry.setContenthash(node, encodedContenthash);
+console.log("TX sent:", tx.hash);
 
-await tx.wait();
-console.log("ENS contenthash updated successfully!");
+const receipt = await tx.wait();
+console.log("TX confirmed:", receipt.transactionHash);
+
+console.log("ENS contenthash update complete.");
