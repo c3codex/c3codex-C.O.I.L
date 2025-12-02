@@ -59,7 +59,7 @@ jobs:
       - name: Update ENS contenthash on Ethereum
         env:
           NEW_IPFS_CID: ${{ steps.upload.outputs.cid }}
-          ETH_PRIVATE_KEY: ${{ secrets.ENS_WALLET_KEY }}
+          ETH_PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
           INFURA_ID: ${{ secrets.INFURA_ID }}
         run: |
           echo "Running ENS updater..."
