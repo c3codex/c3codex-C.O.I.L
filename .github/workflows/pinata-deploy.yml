@@ -1,87 +1,151 @@
-name: Deploy to IPFS and Update ENS (Ethereum)
+steps:
+  - name: Checkout repo
+    uses: actions/checkout@v4
 
-on:
-  push:
-    branches:
-      - main
+  - name: Setup Node
+    uses: actions/setup-node@v4
+    with:
+      node-version: 20
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  - name: Install dependencies
+    run: |
+      npm init -y
+      npm install viem @ensdomains/content-hash axios form-data recursive-readdir
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+  - name: Upload folder to Pinata (IPFS)
+    id: upload
+    env:
+      PINATA_JWT: ${{ secrets.PINATA_JWT }}
+    run: |
+      echo "Uploading site folder to Pinata using Node..."
+      node <<EOF
+      const fs = require('fs');
+      const path = require('path');
+      const FormData = require('form-data');
+      const axios = require('axios');
+      const recursive = require('recursive-readdir');
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      async function uploadToPinata() {
+        const form = new FormData();
+        const ignore = ['.git', 'node_modules', 'package.json', 'package-lock.json', 'scripts', '.github', 'LICENSE', 'README.md'];
+        const files = await recursive('.', ignore);
+        console.log('Files to upload:', files);
+        if (files.length === 0) {
+          console.error('Error: No files found to upload!');
+          process.exit(1);
+        }
+        files.forEach(file => {
+          const relativePath = path.relative('.', file);
+          form.append('file', fs.createReadStream(file), { filepath: relativePath });
+        });
+        form.append('pinataOptions', JSON.stringify({ wrapWithDirectory: true }));
 
-      - name: Install dependencies
-        run: |
-          npm init -y
-          npm install viem @ensdomains/content-hash axios form-data recursive-readdir
+        try {
+          const response = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', form, {
+            headers: {
+              ...form.getHeaders(),
+              Authorization: \`Bearer \${process.env.PINATA_JWT}\`
+            },
+            maxBodyLength: Infinity
+          });
+          console.log('Pinata response:', response.data);
+          const cid = response.data.IpfsHash;
+          console.log('Uploaded CID:', cid);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, \`cid=\${cid}\n\`);
+        } catch (error) {
+          console.error('Error:', error.response ? error.response.data : error.message);
+          process.exit(1);
+        }
+      }
 
-      - name: Upload folder to Pinata (IPFS)
-        id: upload
-        env:
-          PINATA_JWT: ${{ secrets.PINATA_JWT }}
-        run: |
-          echo "Uploading site folder to Pinata using Node..."
-          node <<EOF
-          const fs = require('fs');
-          const path = require('path');
-          const FormData = require('form-data');
-          const axios = require('axios');
-          const recursive = require('recursive-readdir');
+      uploadToPinata();
+      EOF
 
-          async function uploadToPinata() {
-            const form = new FormData();
-            const ignore = ['.git', 'node_modules', 'package.json', 'package-lock.json', 'scripts', '.github', 'LICENSE', 'README.md'];
-            const files = await recursive('.', ignore);
-            console.log('Files to upload:', files);
-            if (files.length === 0) {
-              console.error('Error: No files found to upload!');
-              process.exit(1);
-            }
-            files.forEach(file => {
-              const relativePath = path.relative('.', file);
-              form.append('file', fs.createReadStream(file), { filepath: relativePath });
-            });
-            form.append('pinataOptions', JSON.stringify({ wrapWithDirectory: true }));
+  - name: Update ENS contenthash on Ethereum
+    if: ${{ success() && steps.upload.outputs.cid != '' }}
+    env:
+      NEW_IPFS_CID: ${{ steps.upload.outputs.cid }}
+      ETH_PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
+      INFURA_ID: ${{ secrets.INFURA_ID }}
+    run: |
+      echo "Running ENS updater with CID $NEW_IPFS_CID..."
+      node scripts/update-ens.mjs
 
-            try {
-              const response = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', form, {
-                headers: {
-                  ...form.getHeaders(),
-                  Authorization: \`Bearer \${process.env.PINATA_JWT}\`
-                },
-                maxBodyLength: Infinity
-              });
-              console.log('Pinata response:', response.data);
-              const cid = response.data.IpfsHash;
-              console.log('Uploaded CID:', cid);
-              fs.appendFileSync(process.env.GITHUB_OUTPUT, \`cid=\${cid}\n\`);
-            } catch (error) {
-              console.error('Error:', error.response ? error.response.data : error.message);
-              process.exit(1);
-            }
-          }
+  - name: Job complete
+    if: ${{ always() }}
+    run: echo "Deployment + ENS update finished."steps:
+  - name: Checkout repo
+    uses: actions/checkout@v4
 
-          uploadToPinata();
-          EOF
+  - name: Setup Node
+    uses: actions/setup-node@v4
+    with:
+      node-version: 20
 
-      - name: Update ENS contenthash on Ethereum
-        if: ${{ success() && steps.upload.outputs.cid != '' }}
-        env:
-          NEW_IPFS_CID: ${{ steps.upload.outputs.cid }}
-          ETH_PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
-          INFURA_ID: ${{ secrets.INFURA_ID }}
-        run: |
-          echo "Running ENS updater with CID $NEW_IPFS_CID..."
-          node scripts/update-ens.mjs
+  - name: Install dependencies
+    run: |
+      npm init -y
+      npm install viem @ensdomains/content-hash axios form-data recursive-readdir
 
-      - name: Job complete
-        if: ${{ always() }}
-        run: echo "Deployment + ENS update finished."
+  - name: Upload folder to Pinata (IPFS)
+    id: upload
+    env:
+      PINATA_JWT: ${{ secrets.PINATA_JWT }}
+    run: |
+      echo "Uploading site folder to Pinata using Node..."
+      node <<EOF
+      const fs = require('fs');
+      const path = require('path');
+      const FormData = require('form-data');
+      const axios = require('axios');
+      const recursive = require('recursive-readdir');
+
+      async function uploadToPinata() {
+        const form = new FormData();
+        const ignore = ['.git', 'node_modules', 'package.json', 'package-lock.json', 'scripts', '.github', 'LICENSE', 'README.md'];
+        const files = await recursive('.', ignore);
+        console.log('Files to upload:', files);
+        if (files.length === 0) {
+          console.error('Error: No files found to upload!');
+          process.exit(1);
+        }
+        files.forEach(file => {
+          const relativePath = path.relative('.', file);
+          form.append('file', fs.createReadStream(file), { filepath: relativePath });
+        });
+        form.append('pinataOptions', JSON.stringify({ wrapWithDirectory: true }));
+
+        try {
+          const response = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', form, {
+            headers: {
+              ...form.getHeaders(),
+              Authorization: \`Bearer \${process.env.PINATA_JWT}\`
+            },
+            maxBodyLength: Infinity
+          });
+          console.log('Pinata response:', response.data);
+          const cid = response.data.IpfsHash;
+          console.log('Uploaded CID:', cid);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, \`cid=\${cid}\n\`);
+        } catch (error) {
+          console.error('Error:', error.response ? error.response.data : error.message);
+          process.exit(1);
+        }
+      }
+
+      uploadToPinata();
+      EOF
+
+  - name: Update ENS contenthash on Ethereum
+    if: ${{ success() && steps.upload.outputs.cid != '' }}
+    env:
+      NEW_IPFS_CID: ${{ steps.upload.outputs.cid }}
+      ETH_PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
+      INFURA_ID: ${{ secrets.INFURA_ID }}
+    run: |
+      echo "Running ENS updater with CID $NEW_IPFS_CID..."
+      node scripts/update-ens.mjs
+
+  - name: Job complete
+    if: ${{ always() }}
+    run: echo "Deployment + ENS update finished."
