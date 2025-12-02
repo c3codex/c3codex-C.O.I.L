@@ -10,63 +10,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # -----------------------------
-      # CHECK OUT REPO
-      # -----------------------------
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # -----------------------------
-      # NODE
-      # -----------------------------
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # -----------------------------
-      # INSTALL DEPS FOR UPDATE SCRIPT
-      # -----------------------------
       - name: Install ENS updater dependencies
         run: |
           npm init -y
           npm install viem @ensdomains/content-hash axios
 
-      # -----------------------------
-      # UPLOAD TO PINATA (DIR UPLOAD)
-      # -----------------------------
       - name: Upload folder to Pinata (IPFS)
         id: upload
         env:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
           echo "Uploading site folder to Pinata..."
+          FILES=$(find . -type f -not -path '*/\.git/*' -not -path './node_modules/*' -not -path './package*' -printf "-F 'file=@%p;filename=%P' ")
+          echo "Files to upload: $FILES"
+          if [[ -z "$FILES" ]]; then
+            echo "Error: No files found to upload!"
+            exit 1
+          fi
           RESPONSE=$(curl -s -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
             -H "Authorization: Bearer $PINATA_JWT" \
-            -H "pinataOptions: {\"wrapWithDirectory\": true}" \
-            -F "file=@./index.html" \
-            -F "file=@./css" \
-            -F "file=@./js" \
-            -F "file=@./assets")
-
+            $FILES \
+            -F 'pinataOptions={"wrapWithDirectory": true}')
           echo "Pinata response: $RESPONSE"
+          if [[ $RESPONSE == *'"error"'* ]]; then
+            echo "Error: $RESPONSE"
+            exit 1
+          fi
           CID=$(echo "$RESPONSE" | jq -r '.IpfsHash')
+          echo "Uploaded CID: $CID"
           echo "cid=$CID" >> $GITHUB_OUTPUT
 
-      # -----------------------------
-      # UPDATE ENS CONTENTHASH
-      # -----------------------------
       - name: Update ENS contenthash on Ethereum
+        if: ${{ success() && steps.upload.outputs.cid != '' }}
         env:
           NEW_IPFS_CID: ${{ steps.upload.outputs.cid }}
           ETH_PRIVATE_KEY: ${{ secrets.ETH_PRIVATE_KEY }}
           INFURA_ID: ${{ secrets.INFURA_ID }}
         run: |
-          echo "Running ENS updater..."
+          echo "Running ENS updater with CID $NEW_IPFS_CID..."
           node scripts/update-ens.mjs
 
-      # -----------------------------
-      # DONE
-      # -----------------------------
       - name: Job complete
+        if: ${{ always() }}
         run: echo "Deployment + ENS update finished."
